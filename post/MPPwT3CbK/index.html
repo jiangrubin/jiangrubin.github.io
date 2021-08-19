@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Hello Gridea - Rubin&#39;s Blog</title>
+<title>数据结构与算法 — 递归 - Rubin&#39;s Blog</title>
 <meta name="description" content="温故而知新" />
 <link rel="shortcut icon" href="https://jiangrubin.github.io/favicon.ico?v=1629365825122">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/katex.min.css">
@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.7.2/animate.min.css">
 
 <link rel="stylesheet" href="https://jiangrubin.github.io/styles/main.css">
-<link rel="alternate" type="application/atom+xml" title="Hello Gridea - Rubin&#39;s Blog - Atom Feed" href="https://jiangrubin.github.io/atom.xml">
+<link rel="alternate" type="application/atom+xml" title="数据结构与算法 — 递归 - Rubin&#39;s Blog - Atom Feed" href="https://jiangrubin.github.io/atom.xml">
 
 
 
@@ -47,7 +47,22 @@
             <ul class="markdownIt-TOC">
 <li>
 <ul>
-<li><a href="#%E7%89%B9%E6%80%A7">特性👇</a></li>
+<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
+<li><a href="#%E4%BB%80%E4%B9%88%E6%98%AF%E9%80%92%E5%BD%92">什么是递归</a></li>
+<li><a href="#%E6%96%90%E6%B3%A2%E9%82%A3%E5%A5%91%E6%95%B0%E5%88%97">斐波那契数列</a>
+<ul>
+<li><a href="#%E9%80%92%E5%BD%92%E5%AE%9E%E7%8E%B0">递归实现</a></li>
+<li><a href="#%E8%BF%AD%E4%BB%A3%E5%AE%9E%E7%8E%B0">迭代实现</a></li>
+<li><a href="#%E5%B0%BE%E8%B0%83%E7%94%A8%E4%BC%98%E5%8C%96">尾调用优化</a></li>
+</ul>
+</li>
+<li><a href="#%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF">应用场景</a>
+<ul>
+<li><a href="#%E6%B7%B1%E6%8B%B7%E8%B4%9D">深拷贝</a></li>
+<li><a href="#%E6%95%B0%E7%BB%84%E6%89%81%E5%B9%B3%E5%8C%96">数组扁平化</a></li>
+</ul>
+</li>
+<li><a href="#%E6%80%BB%E7%BB%93">总结</a></li>
 </ul>
 </li>
 </ul>
@@ -96,48 +111,161 @@
 <div class="mask" onclick="closeMenu()">
 </div>
       <div class="content-wrapper py-32 lg:p-8 lg:w-3/4 post-detail animated fadeIn">
-        <h1 class="text-3xl font-semibold lg:mt-16">Hello Gridea</h1>
+        <h1 class="text-3xl font-semibold lg:mt-16">数据结构与算法 — 递归</h1>
         <div class="text-sm text-gray-700 lg:my-8">
-          2018-12-12 / 2 min read
+          2020-05-31 / 4 min read
         </div>
-        
-          <img class="post-feature-image rounded-lg mx-auto my-4" src="https://cdn.jsdelivr.net/gh/jiangrubin/image-host/hello-gridea.png" alt="">
         
         <div class="post-content yue">
-          <p>👏  欢迎使用 <strong>Gridea</strong> ！<br>
-✍️  <strong>Gridea</strong> 一个静态博客写作客户端。你可以用它来记录你的生活、心情、知识、笔记、创意... ...</p>
-<!-- more -->
-<p><a href="https://github.com/getgridea/gridea">Github</a><br>
-<a href="https://gridea.dev/">Gridea 主页</a><br>
-<a href="http://fehey.com/">示例网站</a></p>
-<h2 id="特性">特性👇</h2>
-<p>📝  你可以使用最酷的 <strong>Markdown</strong> 语法，进行快速创作</p>
-<p>🌉  你可以给文章配上精美的封面图和在文章任意位置插入图片</p>
-<p>🏷️  你可以对文章进行标签分组</p>
-<p>📋  你可以自定义菜单，甚至可以创建外部链接菜单</p>
-<p>💻  你可以在 <strong>Windows</strong>，<strong>MacOS</strong> 或 <strong>Linux</strong> 设备上使用此客户端</p>
-<p>🌎  你可以使用 <strong>𝖦𝗂𝗍𝗁𝗎𝖻 𝖯𝖺𝗀𝖾𝗌</strong> 或 <strong>Coding Pages</strong> 向世界展示，未来将支持更多平台</p>
-<p>💬  你可以进行简单的配置，接入 <a href="https://github.com/gitalk/gitalk">Gitalk</a> 或 <a href="https://github.com/SukkaW/DisqusJS">DisqusJS</a> 评论系统</p>
-<p>🇬🇧  你可以使用<strong>中文简体</strong>或<strong>英语</strong></p>
-<p>🌁  你可以任意使用应用内默认主题或任意第三方主题，强大的主题自定义能力</p>
-<p>🖥  你可以自定义源文件夹，利用 OneDrive、百度网盘、iCloud、Dropbox 等进行多设备同步</p>
-<p>🌱 当然 <strong>Gridea</strong> 还很年轻，有很多不足，但请相信，它会不停向前 🏃</p>
-<p>未来，它一定会成为你离不开的伙伴</p>
-<p>尽情发挥你的才华吧！</p>
-<p>😘 Enjoy~</p>
+          <h2 id="前言">前言</h2>
+<p>递归是算法中一种非常重要的思想，应用非常广泛。是DFS、分治法、回溯、二叉树遍历等方法的基础。先从学习这些方法的基础开始。</p>
+<h2 id="什么是递归">什么是递归</h2>
+<p>程序调用自身的编程技巧称为递归（ recursion）。 一个过程或函数在其定义或说明中有直接或间接调用自身的一种方法，它通常把一个大型复杂的问题层层转化为一个与原问题相似的规模较小的问题来求解。</p>
+<p>像下面这样直接调用自身的函数：</p>
+<pre><code class="language-js">function recursion(param){
+    recursion(param)
+}
+</code></pre>
+<p>间接调用自身的函数，也是递归函数：</p>
+<pre><code class="language-js">function recursion1(param){
+    recursion2(param)
+}
+
+function recursion2(param){
+    recursion1(param)
+}
+</code></pre>
+<p>假设现在执行 recursion 函数，就上述情况而言，其会一直执行下去。因此，每个递归函数都必须要有边界条件，即一个不再递归调用的条件，以防止无限递归。</p>
+<p>如果忘记加上用以停止函数递归调用的边界条件，在浏览器中执行，递归并不会无限地执行下去，浏览器会抛出错误 <code>Maximum call stack size exceeded</code> 也就是所谓的栈溢出。</p>
+<p>以阶乘为例，体会一下递归：</p>
+<pre><code class="language-js">function factorial(n) {
+    if (n &lt;= 1) {
+        return 1
+    }
+    return n * factorial(n - 1)
+}
+
+factorial(6) // 6 * 5 * 4 * 3 * 2 * 1 = 720
+</code></pre>
+<p>factorial 是一个实现阶乘的函数，来看下它的调用过程。</p>
+<figure data-type="image" tabindex="1"><img src="https://cdn.jsdelivr.net/gh/jiangrubin/image-host/1590918559854.jpg" alt="" loading="lazy"></figure>
+<p>从这个例子中可以看出，阶乘中的 <code>n &lt;= 1</code> 是边界条件，当边界条件不满足时，递归前进，当边界条件满足时，递归返回。构成递归需具备边界条件、递归前进段和递归返回段。</p>
+<h2 id="斐波那契数列">斐波那契数列</h2>
+<p>斐波那契指的是这样一个数列：1、1、2、3、5、8、13、21、34 ...，这个数列从第3项开始，每一项都等于前两项之和。</p>
+<h3 id="递归实现">递归实现</h3>
+<pre><code class="language-js">function fibonacci(n) {
+    if (n &lt;= 2) {
+        return 1
+    }
+    return fibonacci(n - 1) + fibonacci(n - 2)
+}
+
+console.log(fibonacci(6)) // 8
+</code></pre>
+<p>但是当参数 n 变大时，浏览器卡死了。原因是此函数中存在着大量的冗余计算，并且 n 越大，冗余的越多。如下图所示：</p>
+<figure data-type="image" tabindex="2"><img src="https://cdn.jsdelivr.net/gh/jiangrubin/image-host/1590919586864.png" alt="" loading="lazy"></figure>
+<p>图中每个分支上的函数都是单独调用的，并且都是重复的调用，针对这种冗余计算，我们可以做相关的优化，优化的思路都是减少相同函数的重复调用。</p>
+<h3 id="迭代实现">迭代实现</h3>
+<pre><code class="language-js">function fibonacci(num){
+    var n1 = 1,
+    n2 = 1,
+    n = 1;
+    for (var i = 3; i &lt;= num; i++){
+        n = n1 + n2;
+        n1 = n2;
+        n2 = n;
+    }
+    return n;
+} 
+</code></pre>
+<h3 id="尾调用优化">尾调用优化</h3>
+<pre><code class="language-js">function fibonacci (n, res1 = 1, res2 = 1) {
+    if (n &lt;= 2) {
+        return res2
+    }
+    return fibonacci(n - 1, res2, res1 + res2)
+}
+</code></pre>
+<h2 id="应用场景">应用场景</h2>
+<p>一些 JavaScript 的工具方法中涉及到了递归。</p>
+<h3 id="深拷贝">深拷贝</h3>
+<pre><code class="language-js">function deepCopy (data) {
+    // 数据类型判断函数，见下
+    const t = typeOf(data)
+    let o
+
+    if (t === 'array') {
+        o = []
+    } else if (t === 'object') {
+        o = {}
+    } else {
+        return data
+    }
+
+    for (var key in data) {
+        o[key] = deepCopy(data[key])
+    }
+
+    return o
+}
+
+function typeOf (obj) {
+    const toString = Object.prototype.toString
+    const map = {
+        '[object Boolean]': 'boolean',
+        '[object Number]': 'number',
+        '[object String]': 'string',
+        '[object Function]': 'function',
+        '[object Array]': 'array',
+        '[object Date]': 'date',
+        '[object RegExp]': 'regExp',
+        '[object Undefined]': 'undefined',
+        '[object Null]': 'null',
+        '[object Object]': 'object'
+    }
+    return map[toString.call(obj)]
+}
+</code></pre>
+<h3 id="数组扁平化">数组扁平化</h3>
+<pre><code class="language-js">function flatten(arr) {
+    return arr.reduce(function(prev, next){
+        return prev.concat(Array.isArray(next) ? flatten(next) : next)
+    }, [])
+}
+</code></pre>
+<h2 id="总结">总结</h2>
+<p>学习了递归的基本使用和实现了 JavaScript 中常用的工具方法。关于递归的内容还有很多，比如还有汉诺塔、二叉树遍历等递归场景。算法之路漫漫 😬。</p>
 
         </div>
 
         
-          <a class="animated fadeInUp p-2 items-center text-sm text-gray-700 border hover:bg-gray-300 leading-none rounded-full flex lg:inline-flex m-4 " href="https://jiangrubin.github.io/tag/XdtG1Bj34/">
-            <span class="flex-auto">Gridea</span>
+          <a class="animated fadeInUp p-2 items-center text-sm text-gray-700 border hover:bg-gray-300 leading-none rounded-full flex lg:inline-flex m-4 " href="https://jiangrubin.github.io/tag/pGvoCX5tk/">
+            <span class="flex-auto">js</span>
           </a>
         
 
 
         <div class="flex justify-between py-8">
           
+            <div class="prev-post">
+              <a href="https://jiangrubin.github.io/post/Z5i7FBxxd/">
+                <h3 class="post-title">
+                  <i class="remixicon-arrow-left-line"></i>
+                  微信小程序开发笔记
+                </h3>
+              </a>
+            </div>
+          
 
+          
+            <div class="next-post">
+              <a href="https://jiangrubin.github.io/post/7GaeASM5b/">
+                <h3 class="post-title">
+                  数据结构与算法 — 排序
+                  <i class="remixicon-arrow-right-line"></i>
+                </h3>
+              </a>
+            </div>
           
         </div>
 
