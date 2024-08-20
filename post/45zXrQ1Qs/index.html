@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CSS 开发技巧整理 - Rubin&#39;s Blog</title>
+<meta name="description" content="温故而知新" />
+<link rel="shortcut icon" href="https://jiangrubin.github.io/favicon.ico?v=1724155050236">
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/katex@0.10.0/dist/katex.min.css">
+<link href="https://fastly.jsdelivr.net/npm/remixicon@1.3.1/fonts/remixicon.css" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/animate.css@3.7.2/animate.min.css">
+
+<link rel="stylesheet" href="https://jiangrubin.github.io/styles/main.css">
+<link rel="alternate" type="application/atom+xml" title="CSS 开发技巧整理 - Rubin&#39;s Blog - Atom Feed" href="https://jiangrubin.github.io/atom.xml">
+
+
+
+<script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?bd0efd81b021481d2fc486675082f721";
+    var s = document.getElementsByTagName("script")[0]; 
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+  </head>
+  <body>
+    <div id="app" class="main px-4 flex flex-col lg:flex-row">
+      <div id="sidebar" class="sidebar-wrapper lg:static lg:w-1/4">
+  <div class="lg:sticky top-0">
+    <div class="sidebar-content">
+      <div class="flex lg:block p-4 lg:px-0 items-center fixed lg:static lg:block top-0 right-0 left-0 bg-white z-50">
+        <i class="remixicon-menu-2-line lg:mt-4 text-2xl cursor-pointer animated fadeIn" onclick="openMenu()"></i>
+        <a href="https://jiangrubin.github.io">
+          <img class="animated fadeInLeft avatar rounded-lg mx-4 lg:mt-32 lg:mx-0 mt-0 lg:w-24 lg:h-24 w-12 w-12" src="https://jiangrubin.github.io/images/avatar.png?v=1724155050236" alt="">
+        </a>
+        <h1 class="animated fadeInLeft lg:text-4xl font-semibold lg:mt-8 mt-0 text-xl" style="animation-delay: 0.2s">Rubin&#39;s Blog</h1>
+      </div>
+      
+        <div class="animated fadeInLeft" style="animation-delay: 0.4s">
+          <p class="my-4 text-gray-600 font-light hidden lg:block">
+            文章目录
+          </p>
+          <div class="toc-container hidden lg:block">
+            <ul class="markdownIt-TOC">
+<li>
+<ul>
+<li>
+<ul>
+<li><a href="#%E5%BF%AB%E9%80%9F%E9%87%8D%E7%BD%AE%E8%A1%A8%E5%8D%95%E5%85%83%E7%B4%A0">快速重置表单元素</a></li>
+<li><a href="#%E6%96%87%E6%9C%AC%E7%9C%81%E7%95%A5%E5%8F%B7%E6%98%BE%E7%A4%BA">文本省略号显示</a></li>
+<li><a href="#%E8%AE%BE%E7%BD%AE%E6%96%87%E6%9C%AC%E4%B8%A4%E7%AB%AF%E5%AF%B9%E9%BD%90">设置文本两端对齐</a></li>
+<li><a href="#%E8%A7%84%E5%AE%9A%E5%9B%BE%E5%83%8F%E5%B1%95%E7%A4%BA%E6%96%B9%E5%BC%8F">规定图像展示方式</a></li>
+<li><a href="#1px-%E8%BE%B9%E6%A1%86">1px 边框</a></li>
+<li><a href="#sticky-footer">Sticky Footer</a></li>
+<li><a href="#%E6%AF%9B%E7%8E%BB%E7%92%83%E6%95%88%E6%9E%9C-backdrop-filter">毛玻璃效果 backdrop-filter</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+<div class="menu-container">
+  <i class="remixicon-arrow-left-line text-2xl cursor-pointer animated fadeIn close-menu-btn" onclick="closeMenu()"></i>
+  <div>
+    
+      
+        <a href="/" class="menu" style="animation-delay: 0s">
+          首页
+        </a>
+      
+    
+      
+        <a href="/archives" class="menu" style="animation-delay: 0.2s">
+          归档
+        </a>
+      
+    
+      
+        <a href="/tags" class="menu" style="animation-delay: 0.4s">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu" style="animation-delay: 0.6000000000000001s">
+          关于
+        </a>
+      
+    
+  </div>
+  <div class="site-footer">
+    <div class="py-4 text-gray-700">Powered by <a href="https://github.com/getgridea/gridea" target="_blank" rel="noopener noreferrer">Gridea</a></div>
+    <a class="rss" href="https://jiangrubin.github.io/atom.xml" target="_blank" rel="noopener noreferrer">RSS</a>
+  </div>
+</div>
+<div class="mask" onclick="closeMenu()">
+</div>
+      <div class="content-wrapper py-32 lg:p-8 lg:w-3/4 post-detail animated fadeIn">
+        <h1 class="text-3xl font-semibold lg:mt-16">CSS 开发技巧整理</h1>
+        <div class="text-sm text-gray-700 lg:my-8">
+          2019-11-11 / 4 min read
+        </div>
+        
+          <img class="post-feature-image rounded-lg mx-auto my-4" src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/css-kai-fa-ji-qiao.jpg" alt="">
+        
+        <div class="post-content yue">
+          <h3 id="快速重置表单元素">快速重置表单元素</h3>
+<p>原始的 <code>button</code> 按钮重置</p>
+<pre><code class="language-css">button {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  outline: none;
+  padding: 0;
+}
+</code></pre>
+<p>只需要这样就可以(<code>input</code>、<code>textarea</code>)</p>
+<pre><code class="language-css">button { 
+  all: unset;
+}
+</code></pre>
+<h3 id="文本省略号显示">文本省略号显示</h3>
+<p>文本省略号是非常常见的需求，而省略号展示又通常分为单行和多行俩种情况。</p>
+<p>单行：</p>
+<pre><code class="language-css">div {  
+  overflow: hidden; /* 规定超出内容宽度的元素隐藏 */
+  white-space: nowrap; /* 规定文本是否折行 */  
+  text-overflow: ellipsis; /* 规定超出的内容文本省略号显示，通常跟上面的属性连用，因为没有上面的属性不会触发超出规定的内容 */
+}
+</code></pre>
+<p>多行（能主动控制行数，这里设置的超出 4 行显示省略号）：</p>
+<pre><code class="language-css">div {      
+  overflow: hidden;      
+  text-overflow: ellipsis;      
+  display: -webkit-box; /* 将对象作为弹性伸缩盒子模型显示 */      
+  -webkit-line-clamp: 4; /* 控制最多显示几行 */      
+  -webkit-box-orient: vertical; /* 设置或检索伸缩盒对象的子元素的排列方式 */    
+}
+</code></pre>
+<p>问题：flex 布局下子元素单行文本不显示省略号。</p>
+<p>解决：在父元素上设置 <code>overflow: hidden</code>。</p>
+<pre><code class="language-html">&lt;style&gt;
+.card {
+  display: flex;
+}
+
+.avatar {
+  width: 100px;
+  height: 100px;
+  background-color: #eee;
+  flex-shrink: 0;
+}
+
+.content {
+  flex: 1;
+  overflow: hidden;
+}
+
+.ellipsis {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+&lt;/style&gt;
+
+&lt;body&gt;
+  &lt;div class=&quot;card&quot;&gt;
+    &lt;div class=&quot;avatar&quot;&gt;&lt;/div&gt;
+    &lt;div class=&quot;content&quot;&gt;
+      &lt;div class=&quot;ellipsis&quot;&gt;这是一段最多显示一行的文字，多余的内容会被省略&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/body&gt;
+</code></pre>
+<h3 id="设置文本两端对齐">设置文本两端对齐</h3>
+<pre><code class="language-css">p {
+  text-align-last: justify; /* 这是关键属性 */
+}
+</code></pre>
+<h3 id="规定图像展示方式">规定图像展示方式</h3>
+<p>显示图片的时候会遇到这种问题，对面返回的图片宽高比例是不一样的。但是设置的容器大小是一样的，这个时候需要让图片保持比例最大填充容器。</p>
+<pre><code>object-fit： cover | contain | fill | scale-down | none
+</code></pre>
+<figure data-type="image" tabindex="1"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1573479048374.png" alt="" loading="lazy"></figure>
+<h3 id="1px-边框">1px 边框</h3>
+<p>为元素添加 Retina 屏幕下的 1px 边框（即 hairline），基于伪类 transform 实现。</p>
+<pre><code class="language-css">.hairline {
+  position: relative;
+}
+
+.hairline::after {
+  position: absolute;
+  box-sizing: border-box;
+  content: ' ';
+  pointer-events: none;
+  top: -50%;
+  right: -50%;
+  bottom: -50%;
+  left: -50%;
+  border: 0 solid #ebedf0;
+  transform: scale(0.5);
+  border-top-width: 1px;
+}
+</code></pre>
+<h3 id="sticky-footer">Sticky Footer</h3>
+<p>下面一种情形也是非常常见的一个情景。</p>
+<p>页面存在一个 footer 页脚部分，如果整个页面的内容高度小于视窗的高度，则 footer 固定在视窗底部，如果整个页面的内容高度大于视窗的高度，则 footer 正常流排布（也就是需要滚动到底部才能看到 footer）。</p>
+<p>看看效果：</p>
+<figure data-type="image" tabindex="2"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/%E5%BA%95%E9%83%A8-footer.gif" alt="" loading="lazy"></figure>
+<p>代码实现：</p>
+<pre><code class="language-html">&lt;div class=&quot;container&quot;&gt;
+  &lt;div class=&quot;content&quot;&gt;&lt;/div&gt;
+  &lt;div class=&quot;footer&quot;&gt;&lt;/div&gt;
+&lt;/div&gt;
+</code></pre>
+<pre><code class="language-css">.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.footer {
+  margin-top: auto;
+  flex-shrink: 0;
+  height: 60px;
+  background-color: blue;
+}
+</code></pre>
+<h3 id="毛玻璃效果-backdrop-filter">毛玻璃效果 backdrop-filter</h3>
+<p><a href="https://developer.mozilla.org/zh-CN/docs/Web/CSS/backdrop-filter">backdrop-filter</a> 属性可以让你为一个元素后面区域添加图形效果（如模糊或颜色偏移）。</p>
+<pre><code class="language-css">img {
+  display: block;
+  width: 400px;
+}
+
+.container {
+  position: relative;
+  display: inline-block;
+}
+
+.mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  -webkit-backdrop-filter: blur(10px);	
+  backdrop-filter: blur(10px);	
+}
+</code></pre>
+<pre><code class="language-html">&lt;div class=&quot;container&quot;&gt;
+  &lt;img src=&quot;https://cdn9-banquan.ituchong.com/weili/smh/905571202756378775.webp&quot; /&gt;
+  &lt;div class=&quot;mask&quot;&gt;&lt;/div&gt;
+&lt;/div&gt;
+</code></pre>
+<figure data-type="image" tabindex="3"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/095ec0538e78581338e910fc1fff2816.png" alt="" loading="lazy"></figure>
+
+        </div>
+
+        
+          <a class="animated fadeInUp p-2 items-center text-sm text-gray-700 border hover:bg-gray-300 leading-none rounded-full flex lg:inline-flex m-4 " href="https://jiangrubin.github.io/tag/a4skdzeUz/">
+            <span class="flex-auto">css</span>
+          </a>
+        
+
+
+        <div class="flex justify-between py-8">
+          
+            <div class="prev-post">
+              <a href="https://jiangrubin.github.io/post/kAkji7xCG/">
+                <h3 class="post-title">
+                  <i class="remixicon-arrow-left-line"></i>
+                  函数的防抖和节流
+                </h3>
+              </a>
+            </div>
+          
+
+          
+            <div class="next-post">
+              <a href="https://jiangrubin.github.io/post/ghfYOLaO/">
+                <h3 class="post-title">
+                  React Native 知识点小记
+                  <i class="remixicon-arrow-right-line"></i>
+                </h3>
+              </a>
+            </div>
+          
+        </div>
+
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '58415ac62e821b4b6bbd',
+    clientSecret: '69a93aa48149a7a74c6517efbbb32c57bc07799f',
+    repo: 'jiangrubin.github.io',
+    owner: 'jiangrubin',
+    admin: ['jiangrubin'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+
+          
+        
+
+      </div>
+    </div>
+
+    <script src="https://fastly.jsdelivr.net/npm/prismjs/prism.min.js"></script>
+<script>
+
+Prism.highlightAll()
+
+let mainNavLinks = document.querySelectorAll(".markdownIt-TOC a");
+
+// This should probably be throttled.
+// Especially because it triggers during smooth scrolling.
+// https://lodash.com/docs/4.17.10#throttle
+// You could do like...
+// window.addEventListener("scroll", () => {
+//    _.throttle(doThatStuff, 100);
+// });
+// Only not doing it here to keep this Pen dependency-free.
+
+window.addEventListener("scroll", event => {
+  let fromTop = window.scrollY;
+
+  mainNavLinks.forEach((link, index) => {
+    let section = document.getElementById(decodeURI(link.hash).substring(1));
+    let nextSection = null
+    if (mainNavLinks[index + 1]) {
+      nextSection = document.getElementById(decodeURI(mainNavLinks[index + 1].hash).substring(1));
+    }
+    if (section.offsetTop <= fromTop) {
+      if (nextSection) {
+        if (nextSection.offsetTop > fromTop) {
+          link.classList.add("current");
+        } else {
+          link.classList.remove("current");    
+        }
+      } else {
+        link.classList.add("current");
+      }
+    } else {
+      link.classList.remove("current");
+    }
+  });
+});
+
+
+document.addEventListener("DOMContentLoaded", function() {
+  var lazyImages = [].slice.call(document.querySelectorAll(".post-feature-image.lazy"));
+
+  if ("IntersectionObserver" in window) {
+    let lazyImageObserver = new IntersectionObserver(function(entries, observer) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          let lazyImage = entry.target
+          lazyImage.style.backgroundImage = `url(${lazyImage.dataset.bg})`
+          lazyImage.classList.remove("lazy")
+          lazyImageObserver.unobserve(lazyImage)
+        }
+      });
+    });
+
+    lazyImages.forEach(function(lazyImage) {
+      lazyImageObserver.observe(lazyImage)
+    })
+  } else {
+    // Possibly fall back to a more compatible method here
+  }
+});
+
+const menuContainer = document.querySelector('.menu-container')
+const menus = document.querySelectorAll('.menu-container .menu')
+const mask = document.querySelector('.mask')
+const contentWrapper = document.querySelector('.content-wrapper')
+const latestArticle = document.querySelector('.latest-article')
+const readMore = document.querySelector('.read-more')
+const indexPage = document.querySelector('.index-page')
+
+const isHome = location.pathname === '/'
+if (latestArticle) {
+  latestArticle.style.display = isHome ? 'block' : 'none'
+  readMore.style.display = isHome ? 'block' : 'none'
+  indexPage.style.display = isHome ? 'none' : 'block'
+}
+
+const openMenu = () => {
+  menuContainer.classList.add('open')
+  menus.forEach(menu => {
+    menu.classList.add('animated', 'fadeInLeft')
+  })
+  mask.classList.add('open')
+  contentWrapper.classList.add('is-second')
+}
+
+const closeMenu = () => {
+  menuContainer.classList.remove('open')
+  menus.forEach(menu => {
+    menu.classList.remove('animated', 'fadeInLeft')
+  })
+  mask.classList.remove('open')
+  contentWrapper.classList.remove('is-second')
+}
+</script>
+  
+  </body>
+</html>

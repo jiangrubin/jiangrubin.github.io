@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Quill 实践分享 - Rubin&#39;s Blog</title>
+<meta name="description" content="温故而知新" />
+<link rel="shortcut icon" href="https://jiangrubin.github.io/favicon.ico?v=1724155050236">
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/katex@0.10.0/dist/katex.min.css">
+<link href="https://fastly.jsdelivr.net/npm/remixicon@1.3.1/fonts/remixicon.css" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/animate.css@3.7.2/animate.min.css">
+
+<link rel="stylesheet" href="https://jiangrubin.github.io/styles/main.css">
+<link rel="alternate" type="application/atom+xml" title="Quill 实践分享 - Rubin&#39;s Blog - Atom Feed" href="https://jiangrubin.github.io/atom.xml">
+
+
+
+<script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?bd0efd81b021481d2fc486675082f721";
+    var s = document.getElementsByTagName("script")[0]; 
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+  </head>
+  <body>
+    <div id="app" class="main px-4 flex flex-col lg:flex-row">
+      <div id="sidebar" class="sidebar-wrapper lg:static lg:w-1/4">
+  <div class="lg:sticky top-0">
+    <div class="sidebar-content">
+      <div class="flex lg:block p-4 lg:px-0 items-center fixed lg:static lg:block top-0 right-0 left-0 bg-white z-50">
+        <i class="remixicon-menu-2-line lg:mt-4 text-2xl cursor-pointer animated fadeIn" onclick="openMenu()"></i>
+        <a href="https://jiangrubin.github.io">
+          <img class="animated fadeInLeft avatar rounded-lg mx-4 lg:mt-32 lg:mx-0 mt-0 lg:w-24 lg:h-24 w-12 w-12" src="https://jiangrubin.github.io/images/avatar.png?v=1724155050236" alt="">
+        </a>
+        <h1 class="animated fadeInLeft lg:text-4xl font-semibold lg:mt-8 mt-0 text-xl" style="animation-delay: 0.2s">Rubin&#39;s Blog</h1>
+      </div>
+      
+        <div class="animated fadeInLeft" style="animation-delay: 0.4s">
+          <p class="my-4 text-gray-600 font-light hidden lg:block">
+            文章目录
+          </p>
+          <div class="toc-container hidden lg:block">
+            <ul class="markdownIt-TOC">
+<li>
+<ul>
+<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
+<li><a href="#%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF">使用场景</a></li>
+<li><a href="#%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86">基本原理</a>
+<ul>
+<li><a href="#delta">Delta</a></li>
+<li><a href="#parchment">Parchment</a></li>
+</ul>
+</li>
+<li><a href="#%E6%89%A9%E5%B1%95%E8%83%BD%E5%8A%9B">扩展能力</a>
+<ul>
+<li><a href="#%E8%B6%85%E9%93%BE%E6%8E%A5%E5%8D%A1%E7%89%87">超链接卡片</a></li>
+<li><a href="#%E6%8F%92%E5%85%A5%E8%A1%A8%E6%83%85">插入表情</a></li>
+<li><a href="#%E6%8F%90%E5%8F%8A%E5%8A%9F%E8%83%BD">提及功能</a></li>
+</ul>
+</li>
+<li><a href="#%E6%89%A9%E5%B1%95%E5%AE%9E%E7%8E%B0">扩展实现</a>
+<ul>
+<li><a href="#%E5%A6%82%E4%BD%95%E6%8F%92%E5%85%A5%E8%A1%A8%E6%83%85">如何插入表情</a>
+<ul>
+<li><a href="#%E8%87%AA%E5%AE%9A%E4%B9%89%E5%B7%A5%E5%85%B7%E6%A0%8F%E6%8C%89%E9%92%AE">自定义工具栏按钮</a></li>
+<li><a href="#%E8%87%AA%E5%AE%9A%E4%B9%89-emojiblot">自定义 EmojiBlot</a></li>
+<li><a href="#%E6%B3%A8%E5%86%8C-emojiblot">注册 EmojiBlot</a></li>
+<li><a href="#%E8%B0%83%E7%94%A8-quill-%E7%9A%84-api-%E6%8F%92%E5%85%A5%E8%A1%A8%E6%83%85">调用 Quill 的 API 插入表情</a></li>
+</ul>
+</li>
+<li><a href="#%E6%9C%80%E7%BB%88%E6%95%88%E6%9E%9C">最终效果</a></li>
+</ul>
+</li>
+<li><a href="#%E7%BB%93%E8%AF%AD">结语</a></li>
+<li><a href="#%E8%B5%84%E6%96%99">资料</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+<div class="menu-container">
+  <i class="remixicon-arrow-left-line text-2xl cursor-pointer animated fadeIn close-menu-btn" onclick="closeMenu()"></i>
+  <div>
+    
+      
+        <a href="/" class="menu" style="animation-delay: 0s">
+          首页
+        </a>
+      
+    
+      
+        <a href="/archives" class="menu" style="animation-delay: 0.2s">
+          归档
+        </a>
+      
+    
+      
+        <a href="/tags" class="menu" style="animation-delay: 0.4s">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu" style="animation-delay: 0.6000000000000001s">
+          关于
+        </a>
+      
+    
+  </div>
+  <div class="site-footer">
+    <div class="py-4 text-gray-700">Powered by <a href="https://github.com/getgridea/gridea" target="_blank" rel="noopener noreferrer">Gridea</a></div>
+    <a class="rss" href="https://jiangrubin.github.io/atom.xml" target="_blank" rel="noopener noreferrer">RSS</a>
+  </div>
+</div>
+<div class="mask" onclick="closeMenu()">
+</div>
+      <div class="content-wrapper py-32 lg:p-8 lg:w-3/4 post-detail animated fadeIn">
+        <h1 class="text-3xl font-semibold lg:mt-16">Quill 实践分享</h1>
+        <div class="text-sm text-gray-700 lg:my-8">
+          2022-02-24 / 6 min read
+        </div>
+        
+          <img class="post-feature-image rounded-lg mx-auto my-4" src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/j2dJS15tF.jpeg" alt="">
+        
+        <div class="post-content yue">
+          <h2 id="前言">前言</h2>
+<p>由于 Quill 在近期项目中的实践，特此写了这篇文章。从使用场景、基本原理，再到对 Quill 的扩展，跟大家分享 Quill 富文本编辑器的那些事儿。</p>
+<h2 id="使用场景">使用场景</h2>
+<ul>
+<li>文章博客</li>
+<li>聊天框</li>
+<li>评论</li>
+<li>...</li>
+</ul>
+<figure data-type="image" tabindex="1"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/1646029986997.png" alt="" loading="lazy"></figure>
+<h2 id="基本原理">基本原理</h2>
+<p>Quill 有两个核心的概念 Delta 和 Parchment Blot。</p>
+<h3 id="delta">Delta</h3>
+<p>Delta 是一种特定 JSON 格式的数据模型，用来描述内容的变化。所以有了 Delta 数据，就能知道编辑器的内容。可以参考 Quill 文档中 <a href="https://quilljs.com/docs/delta/">Delta 的描述</a>。</p>
+<figure data-type="image" tabindex="2"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/1646640171736.png" alt="" loading="lazy"></figure>
+<pre><code class="language-js">{
+  &quot;ops&quot;: [
+    { &quot;insert&quot;: &quot;Hello &quot; },
+    { &quot;insert&quot;: &quot;World&quot;, &quot;attributes&quot;: { &quot;bold&quot;: true } },
+    { &quot;insert&quot;: &quot;\n&quot; }
+  ]
+}
+</code></pre>
+<h3 id="parchment">Parchment</h3>
+<blockquote>
+<p>Parchment is Quill's document model. It is a parallel tree structure to the DOM tree, and provides functionality useful for content editors, like Quill. A Parchment tree is made up of Blots, which mirror a DOM node counterpart.</p>
+</blockquote>
+<p>Parchment 和 Blot 是对 DOM 的模拟。Blot 相当于 Node，它包含了很多 Quill 富文本操作需要的 API ，这些是原生 DOM API 没有的。</p>
+<figure data-type="image" tabindex="3"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/1646644176394.png" alt="" loading="lazy"></figure>
+<h2 id="扩展能力">扩展能力</h2>
+<p>扩展性是编辑器的重要能力。</p>
+<p>在使用编辑器时不仅仅有图文，往往还有个性化的需求，比如以下场景。</p>
+<h3 id="超链接卡片">超链接卡片</h3>
+<p>比如插入知乎这样的超链接卡片。</p>
+<figure data-type="image" tabindex="4"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/1646125091924.png" alt="" loading="lazy"></figure>
+<h3 id="插入表情">插入表情</h3>
+<p>比如在编辑器中插入表情，类似微信的聊天框。</p>
+<figure data-type="image" tabindex="5"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/1646126965417.png" alt="" loading="lazy"></figure>
+<h3 id="提及功能">提及功能</h3>
+<p>社区评论中常见的提及（@Mention）功能。</p>
+<figure data-type="image" tabindex="6"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/1646484269913.png" alt="" loading="lazy"></figure>
+<h2 id="扩展实现">扩展实现</h2>
+<p>扩展 Quill 的方式：</p>
+<ul>
+<li>通过自定义 Blot 格式来扩展编辑器的内容。</li>
+<li>通过自定义模块来扩展编辑器的功能。</li>
+</ul>
+<h3 id="如何插入表情">如何插入表情</h3>
+<p>我们从如何插入表情入手，一起看看怎么在 Quill 中插入自定义的内容。</p>
+<ul>
+<li>自定义工具栏按钮</li>
+<li>自定义 EmojiBlot</li>
+<li>注册 EmojiBlot</li>
+<li>调用 Quill 的 API 插入表情</li>
+</ul>
+<h4 id="自定义工具栏按钮">自定义工具栏按钮</h4>
+<p>参考微信的表情选择面板，所以需要我们自定义 emoji 工具栏按钮。</p>
+<pre><code class="language-js">// emoji-tool.vue
+&lt;template&gt;
+  &lt;span class=&quot;editor-tool-emoji&quot;&gt;
+    &lt;el-popover ref=&quot;popover&quot;&gt;
+      &lt;span v-for=&quot;(item, i) of emojis&quot; :key=&quot;i&quot; @click=&quot;onSelect(item)&quot;&gt;
+        &lt;img :src=&quot;item.src_ios&quot; :alt=&quot;item.code_cn&quot; /&gt;
+      &lt;/span&gt;
+    &lt;/el-popover&gt;
+  
+    &lt;img src=&quot;../assets/emoji.png&quot; v-popover:popover /&gt;
+  &lt;/span&gt;
+&lt;/template&gt;
+
+&lt;script&gt;
+// [{ &quot;code&quot;: &quot;[Smile]&quot;, &quot;code_cn&quot;: &quot;[微笑]&quot;, &quot;src_ios&quot;: &quot;https://emojipedia-us.s3.amazonaws.com/content/2021/02/14/emojipedia_wechat_ios_802_smile.png&quot;, &quot;src_android&quot;: &quot;&quot; }]
+import emojis from '../assets/wechat-emojis.json'
+
+export default {
+  data () {
+    return {
+      emojis,
+    }
+  },
+
+  methods: {
+    onSelect (item) {
+      this.$emit('select', item)
+      this.$refs.popover.doClose()
+    }
+  }
+}
+&lt;/script&gt;
+</code></pre>
+<p>在自定义的 toolbar 中使用 emoji 工具栏按钮。</p>
+<pre><code class="language-js">&lt;template&gt;
+  &lt;div id=&quot;editor&quot;&gt;
+    &lt;div id=&quot;editor-toolbar&quot;&gt;
+      &lt;emoji-tool /&gt;
+    &lt;/div&gt;
+
+    &lt;div id=&quot;editor-container&quot;&gt;&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/template&gt;
+</code></pre>
+<pre><code class="language-js">this.quill = new Quill('#editor-container', {
+  theme: 'snow',
+  modules: {
+    toolbar: '#editor-toolbar',
+  }
+})
+</code></pre>
+<p>效果如下：</p>
+<figure data-type="image" tabindex="7"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/1646210316370.png" alt="" loading="lazy"></figure>
+<h4 id="自定义-emojiblot">自定义 EmojiBlot</h4>
+<p>Quill 中的 Blot 是一个普通的 ES6 Class，由于表情和图片的差别就在于：</p>
+<p>Quill 内置的图片格式不支持自定义宽高，而我们要插入的表情是需要特定的宽高的。</p>
+<p>因此我们可以基于 Quill 内置的 ImageBlot 来扩展。</p>
+<pre><code class="language-js">// emoji.js
+import Quill from 'quill'
+
+const ImageBlot = Quill.import('formats/image')
+
+// 扩展 Quill 内置的 ImageBlot
+export default class EmojiBlot extends ImageBlot {
+  static tagName = 'img' // 自定义内容的标签名
+  static blotName = 'emoji' // 自定义 Blot 的名字（必须全局唯一）
+  static className = 'emoji'
+
+  // 创建自定义内容的 DOM 节点
+  static create(value) {
+    const node = super.create(value)
+    node.setAttribute('src', value.src)
+    node.setAttribute('alt', value.alt)
+    node.setAttribute('style', 'vertical-align: bottom;pointer-events: none;')
+    if (value.width !== undefined) {
+      node.setAttribute('width', value.width)
+    }
+    if (value.height !== undefined) {
+      node.setAttribute('height', value.height)
+    }
+    return node
+  }
+  
+  // 返回 ops 数据
+  static value(node) {
+    return {
+      src: node.getAttribute('src'),
+      alt: node.getAttribute('alt'),
+      width: node.getAttribute('width'),
+      height: node.getAttribute('height'),
+    }
+  }
+}
+</code></pre>
+<h4 id="注册-emojiblot">注册 EmojiBlot</h4>
+<p>有了 EmojiBlot，要将其插入 Quill 编辑器中，还需要将这个类注册到 Quill 中。</p>
+<pre><code class="language-js">// index.vue
+import Quill from 'quill'
+import EmojiBlot from './formats/emoji'
+
+Quill.register({
+  'formats/emoji': EmojiBlot
+}, true)
+</code></pre>
+<h4 id="调用-quill-的-api-插入表情">调用 Quill 的 API 插入表情</h4>
+<p>EmojiBlot 注册到 Quill 中之后，Quill 就能认识它了，也就可以调用 Quill 的 API 将其插入到编辑器中。</p>
+<pre><code class="language-js">onSelectEmoji (data) {
+  const { index } = this.quill.getSelection(true)
+  this.quill.insertEmbed(index, 'emoji', {
+    width: '20px',
+    height: '20px',
+    src: data.src_ios,
+    alt: data.code_cn
+  })
+  this.quill.setSelection(index + 1)
+}
+</code></pre>
+<h3 id="最终效果">最终效果</h3>
+<figure data-type="image" tabindex="8"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/1646568963970.png" alt="" loading="lazy"></figure>
+<p>demo 源码地址：<a href="https://github.com/jiangrubin/quill-demo">https://github.com/jiangrubin/quill-demo</a></p>
+<h2 id="结语">结语</h2>
+<p>最后再说一下对 Quill 使用后的感受。在开箱即用方面 Quill 做的不错，简单易用文档清晰，对一些基本场景都能够覆盖。但在个性化定制扩展方面，需要通过操作 DOM 的方式来实现，对习惯了 Vue 或 React 的开发方式，确实不太友好。</p>
+<p>在写这篇文章时，发现了几款不错的富文本编辑器：</p>
+<ul>
+<li><a href="https://tiptap.dev/">Tiptap</a> 基于 ProseMirror 封装的，专为 vue.js 打造，设计优雅，体验流畅舒服的现代富文本编辑器。</li>
+<li><a href="https://editorjs.io/">Editor.js</a> Next generation block styled editor 块样式编辑器 - 知识库内容编辑的未来。</li>
+</ul>
+<h2 id="资料">资料</h2>
+<ul>
+<li><a href="https://quilljs.com/docs/quickstart/">Quill Document</a></li>
+<li><a href="https://github.com/quilljs/parchment/">Quill Parchment</a></li>
+</ul>
+
+        </div>
+
+        
+          <a class="animated fadeInUp p-2 items-center text-sm text-gray-700 border hover:bg-gray-300 leading-none rounded-full flex lg:inline-flex m-4 " href="https://jiangrubin.github.io/tag/XxiprMWWH/">
+            <span class="flex-auto">quill</span>
+          </a>
+        
+          <a class="animated fadeInUp p-2 items-center text-sm text-gray-700 border hover:bg-gray-300 leading-none rounded-full flex lg:inline-flex m-4 " href="https://jiangrubin.github.io/tag/UzM9m2bP0/">
+            <span class="flex-auto">vue</span>
+          </a>
+        
+
+
+        <div class="flex justify-between py-8">
+          
+            <div class="prev-post">
+              <a href="https://jiangrubin.github.io/post/lBW2YQBoU/">
+                <h3 class="post-title">
+                  <i class="remixicon-arrow-left-line"></i>
+                  前端领域的 IoC 理念
+                </h3>
+              </a>
+            </div>
+          
+
+          
+            <div class="next-post">
+              <a href="https://jiangrubin.github.io/post/o7gyttwcg/">
+                <h3 class="post-title">
+                  Web 深色模式适配方案
+                  <i class="remixicon-arrow-right-line"></i>
+                </h3>
+              </a>
+            </div>
+          
+        </div>
+
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '58415ac62e821b4b6bbd',
+    clientSecret: '69a93aa48149a7a74c6517efbbb32c57bc07799f',
+    repo: 'jiangrubin.github.io',
+    owner: 'jiangrubin',
+    admin: ['jiangrubin'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+
+          
+        
+
+      </div>
+    </div>
+
+    <script src="https://fastly.jsdelivr.net/npm/prismjs/prism.min.js"></script>
+<script>
+
+Prism.highlightAll()
+
+let mainNavLinks = document.querySelectorAll(".markdownIt-TOC a");
+
+// This should probably be throttled.
+// Especially because it triggers during smooth scrolling.
+// https://lodash.com/docs/4.17.10#throttle
+// You could do like...
+// window.addEventListener("scroll", () => {
+//    _.throttle(doThatStuff, 100);
+// });
+// Only not doing it here to keep this Pen dependency-free.
+
+window.addEventListener("scroll", event => {
+  let fromTop = window.scrollY;
+
+  mainNavLinks.forEach((link, index) => {
+    let section = document.getElementById(decodeURI(link.hash).substring(1));
+    let nextSection = null
+    if (mainNavLinks[index + 1]) {
+      nextSection = document.getElementById(decodeURI(mainNavLinks[index + 1].hash).substring(1));
+    }
+    if (section.offsetTop <= fromTop) {
+      if (nextSection) {
+        if (nextSection.offsetTop > fromTop) {
+          link.classList.add("current");
+        } else {
+          link.classList.remove("current");    
+        }
+      } else {
+        link.classList.add("current");
+      }
+    } else {
+      link.classList.remove("current");
+    }
+  });
+});
+
+
+document.addEventListener("DOMContentLoaded", function() {
+  var lazyImages = [].slice.call(document.querySelectorAll(".post-feature-image.lazy"));
+
+  if ("IntersectionObserver" in window) {
+    let lazyImageObserver = new IntersectionObserver(function(entries, observer) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          let lazyImage = entry.target
+          lazyImage.style.backgroundImage = `url(${lazyImage.dataset.bg})`
+          lazyImage.classList.remove("lazy")
+          lazyImageObserver.unobserve(lazyImage)
+        }
+      });
+    });
+
+    lazyImages.forEach(function(lazyImage) {
+      lazyImageObserver.observe(lazyImage)
+    })
+  } else {
+    // Possibly fall back to a more compatible method here
+  }
+});
+
+const menuContainer = document.querySelector('.menu-container')
+const menus = document.querySelectorAll('.menu-container .menu')
+const mask = document.querySelector('.mask')
+const contentWrapper = document.querySelector('.content-wrapper')
+const latestArticle = document.querySelector('.latest-article')
+const readMore = document.querySelector('.read-more')
+const indexPage = document.querySelector('.index-page')
+
+const isHome = location.pathname === '/'
+if (latestArticle) {
+  latestArticle.style.display = isHome ? 'block' : 'none'
+  readMore.style.display = isHome ? 'block' : 'none'
+  indexPage.style.display = isHome ? 'none' : 'block'
+}
+
+const openMenu = () => {
+  menuContainer.classList.add('open')
+  menus.forEach(menu => {
+    menu.classList.add('animated', 'fadeInLeft')
+  })
+  mask.classList.add('open')
+  contentWrapper.classList.add('is-second')
+}
+
+const closeMenu = () => {
+  menuContainer.classList.remove('open')
+  menus.forEach(menu => {
+    menu.classList.remove('animated', 'fadeInLeft')
+  })
+  mask.classList.remove('open')
+  contentWrapper.classList.remove('is-second')
+}
+</script>
+  
+  </body>
+</html>

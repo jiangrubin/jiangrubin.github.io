@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>前端领域的 IoC 理念 - Rubin&#39;s Blog</title>
+<meta name="description" content="温故而知新" />
+<link rel="shortcut icon" href="https://jiangrubin.github.io/favicon.ico?v=1724155050236">
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/katex@0.10.0/dist/katex.min.css">
+<link href="https://fastly.jsdelivr.net/npm/remixicon@1.3.1/fonts/remixicon.css" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/animate.css@3.7.2/animate.min.css">
+
+<link rel="stylesheet" href="https://jiangrubin.github.io/styles/main.css">
+<link rel="alternate" type="application/atom+xml" title="前端领域的 IoC 理念 - Rubin&#39;s Blog - Atom Feed" href="https://jiangrubin.github.io/atom.xml">
+
+
+
+<script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?bd0efd81b021481d2fc486675082f721";
+    var s = document.getElementsByTagName("script")[0]; 
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+  </head>
+  <body>
+    <div id="app" class="main px-4 flex flex-col lg:flex-row">
+      <div id="sidebar" class="sidebar-wrapper lg:static lg:w-1/4">
+  <div class="lg:sticky top-0">
+    <div class="sidebar-content">
+      <div class="flex lg:block p-4 lg:px-0 items-center fixed lg:static lg:block top-0 right-0 left-0 bg-white z-50">
+        <i class="remixicon-menu-2-line lg:mt-4 text-2xl cursor-pointer animated fadeIn" onclick="openMenu()"></i>
+        <a href="https://jiangrubin.github.io">
+          <img class="animated fadeInLeft avatar rounded-lg mx-4 lg:mt-32 lg:mx-0 mt-0 lg:w-24 lg:h-24 w-12 w-12" src="https://jiangrubin.github.io/images/avatar.png?v=1724155050236" alt="">
+        </a>
+        <h1 class="animated fadeInLeft lg:text-4xl font-semibold lg:mt-8 mt-0 text-xl" style="animation-delay: 0.2s">Rubin&#39;s Blog</h1>
+      </div>
+      
+        <div class="animated fadeInLeft" style="animation-delay: 0.4s">
+          <p class="my-4 text-gray-600 font-light hidden lg:block">
+            文章目录
+          </p>
+          <div class="toc-container hidden lg:block">
+            <ul class="markdownIt-TOC">
+<li>
+<ul>
+<li><a href="#%E8%83%8C%E6%99%AF">背景</a></li>
+<li><a href="#%E4%BB%80%E4%B9%88%E6%98%AF-ioc">什么是 IoC</a></li>
+<li><a href="#%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5">依赖注入</a></li>
+<li><a href="#%E6%80%BB%E7%BB%93">总结</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+<div class="menu-container">
+  <i class="remixicon-arrow-left-line text-2xl cursor-pointer animated fadeIn close-menu-btn" onclick="closeMenu()"></i>
+  <div>
+    
+      
+        <a href="/" class="menu" style="animation-delay: 0s">
+          首页
+        </a>
+      
+    
+      
+        <a href="/archives" class="menu" style="animation-delay: 0.2s">
+          归档
+        </a>
+      
+    
+      
+        <a href="/tags" class="menu" style="animation-delay: 0.4s">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu" style="animation-delay: 0.6000000000000001s">
+          关于
+        </a>
+      
+    
+  </div>
+  <div class="site-footer">
+    <div class="py-4 text-gray-700">Powered by <a href="https://github.com/getgridea/gridea" target="_blank" rel="noopener noreferrer">Gridea</a></div>
+    <a class="rss" href="https://jiangrubin.github.io/atom.xml" target="_blank" rel="noopener noreferrer">RSS</a>
+  </div>
+</div>
+<div class="mask" onclick="closeMenu()">
+</div>
+      <div class="content-wrapper py-32 lg:p-8 lg:w-3/4 post-detail animated fadeIn">
+        <h1 class="text-3xl font-semibold lg:mt-16">前端领域的 IoC 理念</h1>
+        <div class="text-sm text-gray-700 lg:my-8">
+          2023-09-27 / 8 min read
+        </div>
+        
+        <div class="post-content yue">
+          <h2 id="背景">背景</h2>
+<p>前端应用在不断壮大的过程中，内部模块间的依赖可能也会随之越来越复杂，模块间的 低复用性 导致应用 难以维护，不过我们可以借助计算机领域的一些优秀的编程理念来一定程度上解决这些问题，接下来要讲述的 IoC 就是其中之一。</p>
+<h2 id="什么是-ioc">什么是 IoC</h2>
+<p>IoC 的全称叫做 Inversion of Control，可翻译为「控制反转」或「依赖倒置」，它主要包含了三个准则：</p>
+<ol>
+<li>高层次的模块不应该依赖于低层次的模块，它们都应该依赖于抽象</li>
+<li>抽象不应该依赖于具体实现，具体实现应该依赖于抽象</li>
+<li>面向接口编程，而不要面向实现编程</li>
+</ol>
+<p>概念总是抽象的，所以下面将以一个例子来解释上述的概念：</p>
+<p>假设需要构建一款应用叫 App，它包含一个路由模块 Router 和一个页面监控模块 Track，一开始可能会这么实现：</p>
+<pre><code class="language-js">// app.js
+import Router from './modules/Router';
+import Track from './modules/Track';
+
+class App {
+  constructor(options) {
+    this.options = options;
+    this.router = new Router();
+    this.track = new Track();
+    this.init();
+  }
+
+  init() {
+    window.addEventListener('DOMContentLoaded', () =&gt; {
+      this.router.to('home');
+      this.track.tracking();
+      this.options.onReady();
+    });
+  }
+}
+
+// index.js
+import App from 'path/to/App';
+new App({
+  onReady() {
+    // do something here...
+  },
+});
+</code></pre>
+<p>嗯，看起来没什么问题，但是实际应用中需求是非常多变的，可能需要给路由新增功能（比如实现 <code>history</code> 模式）或者更新配置（启用 history, new Router({ mode: 'history' })）。这就不得不在 App 内部去修改这两个模块，这是一个 <code>INNER BREAKING</code> 的操作，而对于之前测试通过了的 App 来说，也必须重新测试。</p>
+<p>很明显，这不是一个好的应用结构，高层次的模块 App 依赖了两个低层次的模块 Router 和 Track，对低层次模块的修改都会影响高层次的模块 App。那么如何解决这个问题呢，解决方案就是接下来要讲述的 依赖注入（Dependency Injection）。</p>
+<h2 id="依赖注入">依赖注入</h2>
+<p>所谓的依赖注入，简单来说就是把高层模块所依赖的模块通过传参的方式把依赖「注入」到模块内部，上面的代码可以通过依赖注入的方式改造成如下方式：</p>
+<pre><code class="language-js">// app.js
+class App {
+  constructor(options) {
+    this.options = options;
+    this.router = options.router;
+    this.track = options.track;
+    this.init();
+  }
+
+  init() {
+    window.addEventListener('DOMContentLoaded', () =&gt; {
+      this.router.to('home');
+      this.track.tracking();
+      this.options.onReady();
+    });
+  }
+}
+
+// index.js
+import App from 'path/to/App';
+import Router from './modules/Router';
+import Track from './modules/Track';
+
+new App({
+  router: new Router(),
+  track: new Track(),
+  onReady() {
+    // do something here...
+  },
+});
+</code></pre>
+<p>可以看到，通过依赖注入解决了上面所说的 <code>INNER BREAKING</code> 的问题，可以直接在 App 外部对各个模块进行修改而不影响内部。</p>
+<p>是不是就万事大吉了？理想很丰满，但现实却是很骨感的，没过两天产品就给你提了一个新需求，给 App 添加一个分享模块 <code>Share</code>。这样的话又回到了上面所提到的 <code>INNER BREAKING</code> 的问题上：你不得不对 App 模块进行修改加上一行 <code>this.share = options.share</code>，这明显不是我们所期望的。</p>
+<p>虽然 App 通过依赖注入的方式在一定程度上解耦了与其他几个模块的依赖关系，但是还不够彻底，其中的 this.router 和 this.track 等属性其实都还是对「具体实现」的依赖，明显违背了 IoC 思想的准则，那如何进一步抽象 App 模块呢。</p>
+<pre><code class="language-js">class App {
+  static modules = []
+
+  constructor(options) {
+    this.options = options;
+    this.init();
+  }
+
+  init() {
+    window.addEventListener('DOMContentLoaded', () =&gt; {
+      this.initModules();
+      this.options.onReady(this);
+    });
+  }
+
+  static use(module) {
+    Array.isArray(module) ? module.map(item =&gt; App.use(item)) : App.modules.push(module);
+  }
+
+  initModules() {
+    App.modules.map(module =&gt; module.init &amp;&amp; typeof module.init == 'function' &amp;&amp; module.init(this));
+  }
+}
+</code></pre>
+<p>经过改造后 App 内已经没有「具体实现」了，看不到任何业务代码了，那么如何使用 App 来管理我们的依赖呢：</p>
+<pre><code class="language-js">// modules/Router.js
+import Router from 'path/to/Router';
+
+export default {
+  init(app) {
+    app.router = new Router(app.options.router);
+    app.router.to('home');
+  }
+};
+
+// modules/Track.js
+import Track from 'path/to/Track';
+
+export default {
+  init(app) {
+    app.track = new Track(app.options.track);
+    app.track.tracking();
+  }
+};
+
+// index.js
+import App from 'path/to/App';
+import Router from './modules/Router';
+import Track from './modules/Track';
+
+App.use([Router, Track]);
+
+new App({
+  router: {
+    mode: 'history',
+  },
+  track: {
+    // ...
+  },
+  onReady(app) {
+    // app.options ...
+  },
+});
+</code></pre>
+<p>可以发现 App 模块在使用上也非常的方便，通过 <code>App.use()</code> 方法来「注入」依赖，在 <code>./modules/some-module.js</code> 中按照一定的「约定」去初始化相关配置，比如此时需要新增一个 <code>Share</code> 模块的话，无需到 App 内部去修改内容：</p>
+<pre><code class="language-js">// modules/Share.js
+import Share from 'path/to/Share';
+
+export default {
+  init(app) {
+    app.share = new Share();
+    app.setShare = data =&gt; app.share.setShare(data);
+  }
+};
+
+// index.js
+App.use(Share);
+
+new App({
+  // ...
+  onReady(app) {
+    app.setShare({
+      title: 'Hello IoC.',
+      description: 'description here...',
+      // some other data here...
+    });
+  }
+});
+</code></pre>
+<p>直接在 App 外部去 use 这个 Share 模块即可，对模块的注入和配置极为方便。</p>
+<p>那么在 App 内部到底做了哪些工作呢，首先从 App.use 方法说起：</p>
+<pre><code class="language-js">class App {
+  static modules = []
+
+  static use(module) {
+    Array.isArray(module) ? module.map(item =&gt; App.use(item)) : App.modules.push(module);
+  }
+}
+</code></pre>
+<p>可以很清楚的发现，App.use 做了一件非常简单的事情，就是把依赖保存在了 App.modules 属性中，等待后续初始化模块的时候被调用。</p>
+<p>接下来我们看一下模块初始化方法 <code>this.initModules()</code> 具体做了什么事情：</p>
+<pre><code class="language-js">class App {
+  initModules() {
+    App.modules.map(module =&gt; module.init &amp;&amp; typeof module.init == 'function' &amp;&amp; module.init(this));
+  }
+}
+</code></pre>
+<p>可以发现该方法同样做了一件非常简单的事情，就是遍历 App.modules 中所有的模块，判断模块是否包含 init 属性且该属性必须是一个函数，如果判断通过的话，该方法就会去执行模块的 init 方法并把 App 的实例 this 传入其中，以便在模块中引用它。</p>
+<p>从这个方法中可以看出，要实现一个可以被 App.use() 的模块，就必须满足两个「约定」：</p>
+<ol>
+<li>模块必须包含 init 属性</li>
+<li>init 必须是一个函数</li>
+</ol>
+<p>这其实就是 IoC 思想中对「面向接口编程 而不要面向实现编程」这一准则的很好的体现。App 不关心模块具体实现了什么，只要满足对 接口 init 的「约定」就可以了。</p>
+<p>此时回看 <code>Router</code> 模块的实现，就可以很容易理解为什么要这么写了。</p>
+<pre><code class="language-js">// modules/Router.js
+import Router from 'path/to/Router';
+
+export default {
+  init(app) {
+    app.router = new Router(app.options.router);
+    app.router.to('home');
+  }
+};
+</code></pre>
+<h2 id="总结">总结</h2>
+<p>App 模块此时应该称之为「容器」比较合适了，跟业务已经没有任何关系了，它仅仅只是提供了一些方法来辅助管理注入的依赖和控制模块如何执行。</p>
+<p>控制反转（Inversion of Control）是一种「思想」，依赖注入（Dependency Injection）则是这一思想的一种具体「实现方式」，而这里的 App 则是辅助依赖管理的一个「容器」。</p>
+<!-- https://juejin.cn/post/6844903750843236366?searchId=20240816155056A2F697E62358988CFF2D -->
+        </div>
+
+        
+
+
+        <div class="flex justify-between py-8">
+          
+
+          
+            <div class="next-post">
+              <a href="https://jiangrubin.github.io/post/j2dJS15tF/">
+                <h3 class="post-title">
+                  Quill 实践分享
+                  <i class="remixicon-arrow-right-line"></i>
+                </h3>
+              </a>
+            </div>
+          
+        </div>
+
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '58415ac62e821b4b6bbd',
+    clientSecret: '69a93aa48149a7a74c6517efbbb32c57bc07799f',
+    repo: 'jiangrubin.github.io',
+    owner: 'jiangrubin',
+    admin: ['jiangrubin'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+
+          
+        
+
+      </div>
+    </div>
+
+    <script src="https://fastly.jsdelivr.net/npm/prismjs/prism.min.js"></script>
+<script>
+
+Prism.highlightAll()
+
+let mainNavLinks = document.querySelectorAll(".markdownIt-TOC a");
+
+// This should probably be throttled.
+// Especially because it triggers during smooth scrolling.
+// https://lodash.com/docs/4.17.10#throttle
+// You could do like...
+// window.addEventListener("scroll", () => {
+//    _.throttle(doThatStuff, 100);
+// });
+// Only not doing it here to keep this Pen dependency-free.
+
+window.addEventListener("scroll", event => {
+  let fromTop = window.scrollY;
+
+  mainNavLinks.forEach((link, index) => {
+    let section = document.getElementById(decodeURI(link.hash).substring(1));
+    let nextSection = null
+    if (mainNavLinks[index + 1]) {
+      nextSection = document.getElementById(decodeURI(mainNavLinks[index + 1].hash).substring(1));
+    }
+    if (section.offsetTop <= fromTop) {
+      if (nextSection) {
+        if (nextSection.offsetTop > fromTop) {
+          link.classList.add("current");
+        } else {
+          link.classList.remove("current");    
+        }
+      } else {
+        link.classList.add("current");
+      }
+    } else {
+      link.classList.remove("current");
+    }
+  });
+});
+
+
+document.addEventListener("DOMContentLoaded", function() {
+  var lazyImages = [].slice.call(document.querySelectorAll(".post-feature-image.lazy"));
+
+  if ("IntersectionObserver" in window) {
+    let lazyImageObserver = new IntersectionObserver(function(entries, observer) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          let lazyImage = entry.target
+          lazyImage.style.backgroundImage = `url(${lazyImage.dataset.bg})`
+          lazyImage.classList.remove("lazy")
+          lazyImageObserver.unobserve(lazyImage)
+        }
+      });
+    });
+
+    lazyImages.forEach(function(lazyImage) {
+      lazyImageObserver.observe(lazyImage)
+    })
+  } else {
+    // Possibly fall back to a more compatible method here
+  }
+});
+
+const menuContainer = document.querySelector('.menu-container')
+const menus = document.querySelectorAll('.menu-container .menu')
+const mask = document.querySelector('.mask')
+const contentWrapper = document.querySelector('.content-wrapper')
+const latestArticle = document.querySelector('.latest-article')
+const readMore = document.querySelector('.read-more')
+const indexPage = document.querySelector('.index-page')
+
+const isHome = location.pathname === '/'
+if (latestArticle) {
+  latestArticle.style.display = isHome ? 'block' : 'none'
+  readMore.style.display = isHome ? 'block' : 'none'
+  indexPage.style.display = isHome ? 'none' : 'block'
+}
+
+const openMenu = () => {
+  menuContainer.classList.add('open')
+  menus.forEach(menu => {
+    menu.classList.add('animated', 'fadeInLeft')
+  })
+  mask.classList.add('open')
+  contentWrapper.classList.add('is-second')
+}
+
+const closeMenu = () => {
+  menuContainer.classList.remove('open')
+  menus.forEach(menu => {
+    menu.classList.remove('animated', 'fadeInLeft')
+  })
+  mask.classList.remove('open')
+  contentWrapper.classList.remove('is-second')
+}
+</script>
+  
+  </body>
+</html>

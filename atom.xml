@@ -1,0 +1,2301 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <id>https://jiangrubin.github.io</id>
+    <title>Rubin&apos;s Blog</title>
+    <updated>2024-08-20T11:57:33.042Z</updated>
+    <generator>https://github.com/jpmonette/feed</generator>
+    <link rel="alternate" href="https://jiangrubin.github.io"/>
+    <link rel="self" href="https://jiangrubin.github.io/atom.xml"/>
+    <subtitle>温故而知新</subtitle>
+    <logo>https://jiangrubin.github.io/images/avatar.png</logo>
+    <icon>https://jiangrubin.github.io/favicon.ico</icon>
+    <rights>All rights reserved 2024, Rubin&apos;s Blog</rights>
+    <entry>
+        <title type="html"><![CDATA[前端领域的 IoC 理念]]></title>
+        <id>https://jiangrubin.github.io/post/lBW2YQBoU/</id>
+        <link href="https://jiangrubin.github.io/post/lBW2YQBoU/">
+        </link>
+        <updated>2023-09-27T14:37:32.000Z</updated>
+        <content type="html"><![CDATA[<h2 id="背景">背景</h2>
+<p>前端应用在不断壮大的过程中，内部模块间的依赖可能也会随之越来越复杂，模块间的 低复用性 导致应用 难以维护，不过我们可以借助计算机领域的一些优秀的编程理念来一定程度上解决这些问题，接下来要讲述的 IoC 就是其中之一。</p>
+<h2 id="什么是-ioc">什么是 IoC</h2>
+<p>IoC 的全称叫做 Inversion of Control，可翻译为「控制反转」或「依赖倒置」，它主要包含了三个准则：</p>
+<ol>
+<li>高层次的模块不应该依赖于低层次的模块，它们都应该依赖于抽象</li>
+<li>抽象不应该依赖于具体实现，具体实现应该依赖于抽象</li>
+<li>面向接口编程，而不要面向实现编程</li>
+</ol>
+<p>概念总是抽象的，所以下面将以一个例子来解释上述的概念：</p>
+<p>假设需要构建一款应用叫 App，它包含一个路由模块 Router 和一个页面监控模块 Track，一开始可能会这么实现：</p>
+<pre><code class="language-js">// app.js
+import Router from './modules/Router';
+import Track from './modules/Track';
+
+class App {
+  constructor(options) {
+    this.options = options;
+    this.router = new Router();
+    this.track = new Track();
+    this.init();
+  }
+
+  init() {
+    window.addEventListener('DOMContentLoaded', () =&gt; {
+      this.router.to('home');
+      this.track.tracking();
+      this.options.onReady();
+    });
+  }
+}
+
+// index.js
+import App from 'path/to/App';
+new App({
+  onReady() {
+    // do something here...
+  },
+});
+</code></pre>
+<p>嗯，看起来没什么问题，但是实际应用中需求是非常多变的，可能需要给路由新增功能（比如实现 <code>history</code> 模式）或者更新配置（启用 history, new Router({ mode: 'history' })）。这就不得不在 App 内部去修改这两个模块，这是一个 <code>INNER BREAKING</code> 的操作，而对于之前测试通过了的 App 来说，也必须重新测试。</p>
+<p>很明显，这不是一个好的应用结构，高层次的模块 App 依赖了两个低层次的模块 Router 和 Track，对低层次模块的修改都会影响高层次的模块 App。那么如何解决这个问题呢，解决方案就是接下来要讲述的 依赖注入（Dependency Injection）。</p>
+<h2 id="依赖注入">依赖注入</h2>
+<p>所谓的依赖注入，简单来说就是把高层模块所依赖的模块通过传参的方式把依赖「注入」到模块内部，上面的代码可以通过依赖注入的方式改造成如下方式：</p>
+<pre><code class="language-js">// app.js
+class App {
+  constructor(options) {
+    this.options = options;
+    this.router = options.router;
+    this.track = options.track;
+    this.init();
+  }
+
+  init() {
+    window.addEventListener('DOMContentLoaded', () =&gt; {
+      this.router.to('home');
+      this.track.tracking();
+      this.options.onReady();
+    });
+  }
+}
+
+// index.js
+import App from 'path/to/App';
+import Router from './modules/Router';
+import Track from './modules/Track';
+
+new App({
+  router: new Router(),
+  track: new Track(),
+  onReady() {
+    // do something here...
+  },
+});
+</code></pre>
+<p>可以看到，通过依赖注入解决了上面所说的 <code>INNER BREAKING</code> 的问题，可以直接在 App 外部对各个模块进行修改而不影响内部。</p>
+<p>是不是就万事大吉了？理想很丰满，但现实却是很骨感的，没过两天产品就给你提了一个新需求，给 App 添加一个分享模块 <code>Share</code>。这样的话又回到了上面所提到的 <code>INNER BREAKING</code> 的问题上：你不得不对 App 模块进行修改加上一行 <code>this.share = options.share</code>，这明显不是我们所期望的。</p>
+<p>虽然 App 通过依赖注入的方式在一定程度上解耦了与其他几个模块的依赖关系，但是还不够彻底，其中的 this.router 和 this.track 等属性其实都还是对「具体实现」的依赖，明显违背了 IoC 思想的准则，那如何进一步抽象 App 模块呢。</p>
+<pre><code class="language-js">class App {
+  static modules = []
+
+  constructor(options) {
+    this.options = options;
+    this.init();
+  }
+
+  init() {
+    window.addEventListener('DOMContentLoaded', () =&gt; {
+      this.initModules();
+      this.options.onReady(this);
+    });
+  }
+
+  static use(module) {
+    Array.isArray(module) ? module.map(item =&gt; App.use(item)) : App.modules.push(module);
+  }
+
+  initModules() {
+    App.modules.map(module =&gt; module.init &amp;&amp; typeof module.init == 'function' &amp;&amp; module.init(this));
+  }
+}
+</code></pre>
+<p>经过改造后 App 内已经没有「具体实现」了，看不到任何业务代码了，那么如何使用 App 来管理我们的依赖呢：</p>
+<pre><code class="language-js">// modules/Router.js
+import Router from 'path/to/Router';
+
+export default {
+  init(app) {
+    app.router = new Router(app.options.router);
+    app.router.to('home');
+  }
+};
+
+// modules/Track.js
+import Track from 'path/to/Track';
+
+export default {
+  init(app) {
+    app.track = new Track(app.options.track);
+    app.track.tracking();
+  }
+};
+
+// index.js
+import App from 'path/to/App';
+import Router from './modules/Router';
+import Track from './modules/Track';
+
+App.use([Router, Track]);
+
+new App({
+  router: {
+    mode: 'history',
+  },
+  track: {
+    // ...
+  },
+  onReady(app) {
+    // app.options ...
+  },
+});
+</code></pre>
+<p>可以发现 App 模块在使用上也非常的方便，通过 <code>App.use()</code> 方法来「注入」依赖，在 <code>./modules/some-module.js</code> 中按照一定的「约定」去初始化相关配置，比如此时需要新增一个 <code>Share</code> 模块的话，无需到 App 内部去修改内容：</p>
+<pre><code class="language-js">// modules/Share.js
+import Share from 'path/to/Share';
+
+export default {
+  init(app) {
+    app.share = new Share();
+    app.setShare = data =&gt; app.share.setShare(data);
+  }
+};
+
+// index.js
+App.use(Share);
+
+new App({
+  // ...
+  onReady(app) {
+    app.setShare({
+      title: 'Hello IoC.',
+      description: 'description here...',
+      // some other data here...
+    });
+  }
+});
+</code></pre>
+<p>直接在 App 外部去 use 这个 Share 模块即可，对模块的注入和配置极为方便。</p>
+<p>那么在 App 内部到底做了哪些工作呢，首先从 App.use 方法说起：</p>
+<pre><code class="language-js">class App {
+  static modules = []
+
+  static use(module) {
+    Array.isArray(module) ? module.map(item =&gt; App.use(item)) : App.modules.push(module);
+  }
+}
+</code></pre>
+<p>可以很清楚的发现，App.use 做了一件非常简单的事情，就是把依赖保存在了 App.modules 属性中，等待后续初始化模块的时候被调用。</p>
+<p>接下来我们看一下模块初始化方法 <code>this.initModules()</code> 具体做了什么事情：</p>
+<pre><code class="language-js">class App {
+  initModules() {
+    App.modules.map(module =&gt; module.init &amp;&amp; typeof module.init == 'function' &amp;&amp; module.init(this));
+  }
+}
+</code></pre>
+<p>可以发现该方法同样做了一件非常简单的事情，就是遍历 App.modules 中所有的模块，判断模块是否包含 init 属性且该属性必须是一个函数，如果判断通过的话，该方法就会去执行模块的 init 方法并把 App 的实例 this 传入其中，以便在模块中引用它。</p>
+<p>从这个方法中可以看出，要实现一个可以被 App.use() 的模块，就必须满足两个「约定」：</p>
+<ol>
+<li>模块必须包含 init 属性</li>
+<li>init 必须是一个函数</li>
+</ol>
+<p>这其实就是 IoC 思想中对「面向接口编程 而不要面向实现编程」这一准则的很好的体现。App 不关心模块具体实现了什么，只要满足对 接口 init 的「约定」就可以了。</p>
+<p>此时回看 <code>Router</code> 模块的实现，就可以很容易理解为什么要这么写了。</p>
+<pre><code class="language-js">// modules/Router.js
+import Router from 'path/to/Router';
+
+export default {
+  init(app) {
+    app.router = new Router(app.options.router);
+    app.router.to('home');
+  }
+};
+</code></pre>
+<h2 id="总结">总结</h2>
+<p>App 模块此时应该称之为「容器」比较合适了，跟业务已经没有任何关系了，它仅仅只是提供了一些方法来辅助管理注入的依赖和控制模块如何执行。</p>
+<p>控制反转（Inversion of Control）是一种「思想」，依赖注入（Dependency Injection）则是这一思想的一种具体「实现方式」，而这里的 App 则是辅助依赖管理的一个「容器」。</p>
+<!-- https://juejin.cn/post/6844903750843236366?searchId=20240816155056A2F697E62358988CFF2D -->]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Quill 实践分享]]></title>
+        <id>https://jiangrubin.github.io/post/j2dJS15tF/</id>
+        <link href="https://jiangrubin.github.io/post/j2dJS15tF/">
+        </link>
+        <updated>2022-02-24T12:40:27.000Z</updated>
+        <content type="html"><![CDATA[<h2 id="前言">前言</h2>
+<p>由于 Quill 在近期项目中的实践，特此写了这篇文章。从使用场景、基本原理，再到对 Quill 的扩展，跟大家分享 Quill 富文本编辑器的那些事儿。</p>
+<h2 id="使用场景">使用场景</h2>
+<ul>
+<li>文章博客</li>
+<li>聊天框</li>
+<li>评论</li>
+<li>...</li>
+</ul>
+<figure data-type="image" tabindex="1"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/1646029986997.png" alt="" loading="lazy"></figure>
+<h2 id="基本原理">基本原理</h2>
+<p>Quill 有两个核心的概念 Delta 和 Parchment Blot。</p>
+<h3 id="delta">Delta</h3>
+<p>Delta 是一种特定 JSON 格式的数据模型，用来描述内容的变化。所以有了 Delta 数据，就能知道编辑器的内容。可以参考 Quill 文档中 <a href="https://quilljs.com/docs/delta/">Delta 的描述</a>。</p>
+<figure data-type="image" tabindex="2"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/1646640171736.png" alt="" loading="lazy"></figure>
+<pre><code class="language-js">{
+  &quot;ops&quot;: [
+    { &quot;insert&quot;: &quot;Hello &quot; },
+    { &quot;insert&quot;: &quot;World&quot;, &quot;attributes&quot;: { &quot;bold&quot;: true } },
+    { &quot;insert&quot;: &quot;\n&quot; }
+  ]
+}
+</code></pre>
+<h3 id="parchment">Parchment</h3>
+<blockquote>
+<p>Parchment is Quill's document model. It is a parallel tree structure to the DOM tree, and provides functionality useful for content editors, like Quill. A Parchment tree is made up of Blots, which mirror a DOM node counterpart.</p>
+</blockquote>
+<p>Parchment 和 Blot 是对 DOM 的模拟。Blot 相当于 Node，它包含了很多 Quill 富文本操作需要的 API ，这些是原生 DOM API 没有的。</p>
+<figure data-type="image" tabindex="3"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/1646644176394.png" alt="" loading="lazy"></figure>
+<h2 id="扩展能力">扩展能力</h2>
+<p>扩展性是编辑器的重要能力。</p>
+<p>在使用编辑器时不仅仅有图文，往往还有个性化的需求，比如以下场景。</p>
+<h3 id="超链接卡片">超链接卡片</h3>
+<p>比如插入知乎这样的超链接卡片。</p>
+<figure data-type="image" tabindex="4"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/1646125091924.png" alt="" loading="lazy"></figure>
+<h3 id="插入表情">插入表情</h3>
+<p>比如在编辑器中插入表情，类似微信的聊天框。</p>
+<figure data-type="image" tabindex="5"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/1646126965417.png" alt="" loading="lazy"></figure>
+<h3 id="提及功能">提及功能</h3>
+<p>社区评论中常见的提及（@Mention）功能。</p>
+<figure data-type="image" tabindex="6"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/1646484269913.png" alt="" loading="lazy"></figure>
+<h2 id="扩展实现">扩展实现</h2>
+<p>扩展 Quill 的方式：</p>
+<ul>
+<li>通过自定义 Blot 格式来扩展编辑器的内容。</li>
+<li>通过自定义模块来扩展编辑器的功能。</li>
+</ul>
+<h3 id="如何插入表情">如何插入表情</h3>
+<p>我们从如何插入表情入手，一起看看怎么在 Quill 中插入自定义的内容。</p>
+<ul>
+<li>自定义工具栏按钮</li>
+<li>自定义 EmojiBlot</li>
+<li>注册 EmojiBlot</li>
+<li>调用 Quill 的 API 插入表情</li>
+</ul>
+<h4 id="自定义工具栏按钮">自定义工具栏按钮</h4>
+<p>参考微信的表情选择面板，所以需要我们自定义 emoji 工具栏按钮。</p>
+<pre><code class="language-js">// emoji-tool.vue
+&lt;template&gt;
+  &lt;span class=&quot;editor-tool-emoji&quot;&gt;
+    &lt;el-popover ref=&quot;popover&quot;&gt;
+      &lt;span v-for=&quot;(item, i) of emojis&quot; :key=&quot;i&quot; @click=&quot;onSelect(item)&quot;&gt;
+        &lt;img :src=&quot;item.src_ios&quot; :alt=&quot;item.code_cn&quot; /&gt;
+      &lt;/span&gt;
+    &lt;/el-popover&gt;
+  
+    &lt;img src=&quot;../assets/emoji.png&quot; v-popover:popover /&gt;
+  &lt;/span&gt;
+&lt;/template&gt;
+
+&lt;script&gt;
+// [{ &quot;code&quot;: &quot;[Smile]&quot;, &quot;code_cn&quot;: &quot;[微笑]&quot;, &quot;src_ios&quot;: &quot;https://emojipedia-us.s3.amazonaws.com/content/2021/02/14/emojipedia_wechat_ios_802_smile.png&quot;, &quot;src_android&quot;: &quot;&quot; }]
+import emojis from '../assets/wechat-emojis.json'
+
+export default {
+  data () {
+    return {
+      emojis,
+    }
+  },
+
+  methods: {
+    onSelect (item) {
+      this.$emit('select', item)
+      this.$refs.popover.doClose()
+    }
+  }
+}
+&lt;/script&gt;
+</code></pre>
+<p>在自定义的 toolbar 中使用 emoji 工具栏按钮。</p>
+<pre><code class="language-js">&lt;template&gt;
+  &lt;div id=&quot;editor&quot;&gt;
+    &lt;div id=&quot;editor-toolbar&quot;&gt;
+      &lt;emoji-tool /&gt;
+    &lt;/div&gt;
+
+    &lt;div id=&quot;editor-container&quot;&gt;&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/template&gt;
+</code></pre>
+<pre><code class="language-js">this.quill = new Quill('#editor-container', {
+  theme: 'snow',
+  modules: {
+    toolbar: '#editor-toolbar',
+  }
+})
+</code></pre>
+<p>效果如下：</p>
+<figure data-type="image" tabindex="7"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/1646210316370.png" alt="" loading="lazy"></figure>
+<h4 id="自定义-emojiblot">自定义 EmojiBlot</h4>
+<p>Quill 中的 Blot 是一个普通的 ES6 Class，由于表情和图片的差别就在于：</p>
+<p>Quill 内置的图片格式不支持自定义宽高，而我们要插入的表情是需要特定的宽高的。</p>
+<p>因此我们可以基于 Quill 内置的 ImageBlot 来扩展。</p>
+<pre><code class="language-js">// emoji.js
+import Quill from 'quill'
+
+const ImageBlot = Quill.import('formats/image')
+
+// 扩展 Quill 内置的 ImageBlot
+export default class EmojiBlot extends ImageBlot {
+  static tagName = 'img' // 自定义内容的标签名
+  static blotName = 'emoji' // 自定义 Blot 的名字（必须全局唯一）
+  static className = 'emoji'
+
+  // 创建自定义内容的 DOM 节点
+  static create(value) {
+    const node = super.create(value)
+    node.setAttribute('src', value.src)
+    node.setAttribute('alt', value.alt)
+    node.setAttribute('style', 'vertical-align: bottom;pointer-events: none;')
+    if (value.width !== undefined) {
+      node.setAttribute('width', value.width)
+    }
+    if (value.height !== undefined) {
+      node.setAttribute('height', value.height)
+    }
+    return node
+  }
+  
+  // 返回 ops 数据
+  static value(node) {
+    return {
+      src: node.getAttribute('src'),
+      alt: node.getAttribute('alt'),
+      width: node.getAttribute('width'),
+      height: node.getAttribute('height'),
+    }
+  }
+}
+</code></pre>
+<h4 id="注册-emojiblot">注册 EmojiBlot</h4>
+<p>有了 EmojiBlot，要将其插入 Quill 编辑器中，还需要将这个类注册到 Quill 中。</p>
+<pre><code class="language-js">// index.vue
+import Quill from 'quill'
+import EmojiBlot from './formats/emoji'
+
+Quill.register({
+  'formats/emoji': EmojiBlot
+}, true)
+</code></pre>
+<h4 id="调用-quill-的-api-插入表情">调用 Quill 的 API 插入表情</h4>
+<p>EmojiBlot 注册到 Quill 中之后，Quill 就能认识它了，也就可以调用 Quill 的 API 将其插入到编辑器中。</p>
+<pre><code class="language-js">onSelectEmoji (data) {
+  const { index } = this.quill.getSelection(true)
+  this.quill.insertEmbed(index, 'emoji', {
+    width: '20px',
+    height: '20px',
+    src: data.src_ios,
+    alt: data.code_cn
+  })
+  this.quill.setSelection(index + 1)
+}
+</code></pre>
+<h3 id="最终效果">最终效果</h3>
+<figure data-type="image" tabindex="8"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/1646568963970.png" alt="" loading="lazy"></figure>
+<p>demo 源码地址：<a href="https://github.com/jiangrubin/quill-demo">https://github.com/jiangrubin/quill-demo</a></p>
+<h2 id="结语">结语</h2>
+<p>最后再说一下对 Quill 使用后的感受。在开箱即用方面 Quill 做的不错，简单易用文档清晰，对一些基本场景都能够覆盖。但在个性化定制扩展方面，需要通过操作 DOM 的方式来实现，对习惯了 Vue 或 React 的开发方式，确实不太友好。</p>
+<p>在写这篇文章时，发现了几款不错的富文本编辑器：</p>
+<ul>
+<li><a href="https://tiptap.dev/">Tiptap</a> 基于 ProseMirror 封装的，专为 vue.js 打造，设计优雅，体验流畅舒服的现代富文本编辑器。</li>
+<li><a href="https://editorjs.io/">Editor.js</a> Next generation block styled editor 块样式编辑器 - 知识库内容编辑的未来。</li>
+</ul>
+<h2 id="资料">资料</h2>
+<ul>
+<li><a href="https://quilljs.com/docs/quickstart/">Quill Document</a></li>
+<li><a href="https://github.com/quilljs/parchment/">Quill Parchment</a></li>
+</ul>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Web 深色模式适配方案]]></title>
+        <id>https://jiangrubin.github.io/post/o7gyttwcg/</id>
+        <link href="https://jiangrubin.github.io/post/o7gyttwcg/">
+        </link>
+        <updated>2021-08-13T07:29:40.000Z</updated>
+        <content type="html"><![CDATA[<h2 id="前言">前言</h2>
+<p>随着苹果发布 iOS 13 正式版，推出了备受期待的深色模式（Dark Mode）。因该特性在浏览时提供更好的可视性和沉浸感。支持深色模式已然成为现代移动应用和网站的一个潮流趋势。</p>
+<p>那么就跟随趋势，开始进行深色模式的适配吧。</p>
+<h2 id="技术方案">技术方案</h2>
+<h3 id="css-媒体查询">CSS 媒体查询</h3>
+<p><a href="https://developer.mozilla.org/zh-CN/docs/Web/CSS/@media/prefers-color-scheme">prefers-color-scheme</a> 是一种用于检测用户是否有将系统的主题色设置为亮色或者暗色的 CSS 媒体特性。利用其设置不同主题模式下的 CSS 样式，浏览器会自动根据当前系统主题加载对应的 CSS 样式。light 适配浅色主题，dark 适配深色主题，no-preference 表示获取不到主题时的适配方案。</p>
+<pre><code class="language-css">@media (prefers-color-scheme: light) {
+  .content {
+    color: #333;
+    background-color: #fff;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .content {
+    color: #fff;
+    background-color: #292934;
+  }
+}
+</code></pre>
+<p>先来看一下效果，将系统设置为浅色外观：</p>
+<figure data-type="image" tabindex="1"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/7ec0b9e89a7b851ceb9d364853675f02.png" alt="" loading="lazy"></figure>
+<figure data-type="image" tabindex="2"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/4f383204f22a0f6863803b19cabf23b6.png" alt="" loading="lazy"></figure>
+<p>然后将系统设置为深色外观：</p>
+<figure data-type="image" tabindex="3"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/e261b5862392b75b2c85bd5ccc1b329f.png" alt="" loading="lazy"></figure>
+<figure data-type="image" tabindex="4"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/37722e9a926ffea5f2763683b35dc352.png" alt="" loading="lazy"></figure>
+<h3 id="css-变量">CSS 变量</h3>
+<p>在项目中，往往需要写大量的 CSS 样式类名，如果把样式根据不同的外观模式各写一份，其工作量可想而知。而通过将不同外观模式下的颜色定义为 CSS 变量。在外观模式切换时，只需修改颜色变量即可。</p>
+<pre><code class="language-css">// 示例代码
+:root {
+  --white: #fff;
+  --gray: #333;
+  --text-color: var(--gray);
+}
+
+@media (prefers-color-scheme: light) { 
+  --text-color: var(--gray);
+}
+
+@media (prefers-color-scheme: dark) { 
+  --text-color: var(--white);
+}
+
+.container {
+  color: var(--text-color);
+}
+</code></pre>
+<h3 id="windowmatchmedia">Window.matchMedia</h3>
+<p>浏览器提供了 <a href="https://developer.mozilla.org/zh-CN/docs/Web/API/Window/matchMedia">window.matchMedia</a> 方法，可以用来查询指定的媒体查询字符串解析后的结果。</p>
+<pre><code class="language-js">if (window.matchMedia('prefers-color-scheme: dark').matches) {
+  // 深色模式做什么
+} else {
+  // 浅色模式做什么
+}
+</code></pre>
+<p>另外还可以监听系统外观模式的状态：</p>
+<pre><code class="language-js">window.matchMedia('(prefers-color-scheme: dark)').addListener(e =&gt; {
+  if (e.matches) {
+    // 系统开启深色模式后做什么
+  } else {
+    // 系统开启浅色模式后做什么
+  }
+});
+</code></pre>
+<h2 id="项目实践">项目实践</h2>
+<p>以 vue-cli 搭建的应用为例。</p>
+<h3 id="组件库定制主题">组件库定制主题</h3>
+<p>项目中大都引用第三方开源组件库，组件库一般会使用 Sass、Less 等 CSS 预处理器定义颜色变量作为组件的基础色值，可以修改基础色值来自定义主题和深色模式适配。</p>
+<p>例如使用 vant 组件库，代码如下：</p>
+<pre><code class="language-css">:root {
+  --white: #fff;
+  --gray-1: #4E4C56;
+  --gray-2: #f8f8f8;
+  --dark-1: #292934;
+  --dark-2: #23232B;
+}
+
+@media (prefers-color-scheme: light) { 
+  --text-color: var(--gray-1);
+  --background-color: var(--gray-2);
+  --card-background-color: var(--white);
+}
+
+@media (prefers-color-scheme: dark) { 
+  --text-color: var(--white);
+  --background-color: var(--dark-2);
+  --card-background-color: var(--dark-1);
+}
+
+// 覆盖 vant less 样式变量
+@text-color: var(--text-color);
+@tabbar-background-color: var(--card-background-color);
+</code></pre>
+<blockquote>
+<p>更多关于 vant 定制主题的内容，可查阅官方<a href="https://vant-contrib.gitee.io/vant/#/zh-CN/theme">文档</a>。</p>
+</blockquote>
+<h3 id="图片显示">图片显示</h3>
+<p>如果一张图是暗色调，在明亮模式色彩对比度强、观看流畅，但在暗黑模式下便会存在和背景色对比度弱，不方便查看。所以需要在不同模式下显示不同的图片。实现方式就是使用 <a href="https://developer.mozilla.org/zh-CN/docs/Web/HTML/Element/picture">picture</a> 元素。</p>
+<pre><code class="language-html">&lt;picture&gt;
+  &lt;source media=&quot;(prefers-color-scheme: dark)&quot; srcset=&quot;https://user-images.githubusercontent.com/25423296/163456776-7f95b81a-f1ed-45f7-b7ab-8fa810d529fa.png&quot; /&gt;
+  &lt;img src=&quot;https://user-images.githubusercontent.com/25423296/163456779-a8556205-d0a5-45e2-ac17-42d089e3c3f8.png&quot; /&gt;
+&lt;/picture&gt;
+</code></pre>
+<p><video controls src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/2022-05-23.14.33.49.mov" width="100%"></video></p>
+<!-- 在项目中除了颜色的适配外，一些 icon 图标、svg、图片也需要根据外观模式切换而改变。那么只使用 CSS 条件规则很难实现这些需求。所以可以使用 window.matchMedia 结合 vuex，创建一个全局变量以便每个组件去使用。
+
+```js
+// App.vue
+mounted () {
+  window.matchMedia('(prefers-color-scheme: dark)').addListener((e) => {
+    this.$store.commit('SET_THEME_MODE', e.matches ? 'dark' : 'light')
+  })
+},
+```
+
+```js
+export default new Vuex.Store({
+  state: {
+    themeMode: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  },
+  getters: {
+    themeMode (state) {
+      return state.themeMode
+    }
+  },
+  mutations: {
+    SET_THEME_MODE (state, mode) {
+      state.themeMode = mode
+    }
+  }
+})
+``` -->
+<h3 id="用户设置">用户设置</h3>
+<p>应用应该允许用户主动去选择外观模式，设置后外观模式将不再跟随系统设置。</p>
+<figure data-type="image" tabindex="5"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/54fa9fb0c6c49aceae2ba923300972ff.png" alt="" loading="lazy"></figure>
+<p>具体实现的核心代码如下：</p>
+<pre><code class="language-js">function getThemeMode () {
+  return localStorage.getItem('THEME_MODE')
+}
+
+function setThemeMode (value) {
+  localStorage.setItem('THEME_MODE', value)
+}
+
+export default new Vuex.Store({
+  state: {
+    themeMode: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  },
+  getters: {
+    themeMode (state) {
+      return getThemeMode() || state.themeMode
+    }
+  },
+  mutations: {
+    SET_THEME_MODE (state, mode) {
+      state.themeMode = mode
+    }
+  }
+})
+</code></pre>
+<p>在根节点上添加 theme-mode 属性，使应用初次加载时，也可渲染当前设置的外观模式效果。</p>
+<pre><code class="language-js">&lt;template&gt;
+  &lt;div id=&quot;app&quot; :theme-mode=&quot;themeMode&quot;&gt;&lt;/div&gt;
+&lt;/template&gt;
+
+&lt;script&gt;
+export default {
+  computed: {
+    themeMode () {
+      return this.$store.getters.themeMode
+    }
+  },
+  mounted () {
+    window.matchMedia('(prefers-color-scheme: dark)').addListener((e) =&gt; {
+      this.$store.commit('SET_THEME_MODE', e.matches ? 'dark' : 'light')
+    })
+  },
+}
+&lt;/script&gt;
+</code></pre>
+<pre><code class="language-css">:root {
+  --white: #fff;
+  --gray-1: #4E4C56;
+  --gray-2: #f8f8f8;
+  --dark-1: #292934;
+  --dark-2: #23232B;
+}
+
+.theme-mode-light {
+  --text-color: var(--gray-1);
+  --background-color: var(--gray-2);
+  --card-background-color: var(--white);
+}
+
+.theme-mode-dark {
+  --text-color: var(--white);
+  --background-color: var(--dark-2);
+  --card-background-color: var(--dark-1);
+}
+
+#app[theme-mode=light] {
+  &amp;:extend(.theme-mode-light);
+}
+
+#app[theme-mode=dark] {
+  &amp;:extend(.theme-mode-dark);
+}
+
+@media (prefers-color-scheme: light) { 
+  :root {
+    &amp;:extend(.theme-mode-light);
+  }
+}
+
+@media (prefers-color-scheme: dark) { 
+  :root {
+    &amp;:extend(.theme-mode-dark);
+  }
+}
+</code></pre>
+<h2 id="总结">总结</h2>
+<p>本文介绍了深色模式适配方案和项目中会遇到的问题。如果有错误的地方或者有更好的解决想法，欢迎留言讨论。</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Element Table 组件封装]]></title>
+        <id>https://jiangrubin.github.io/post/mOXUMW6uC/</id>
+        <link href="https://jiangrubin.github.io/post/mOXUMW6uC/">
+        </link>
+        <updated>2021-04-10T02:48:09.000Z</updated>
+        <content type="html"><![CDATA[<h2 id="前言">前言</h2>
+<p>使用配置描述数据来替代 vue 模板的组件写法，基础能力完全与 <a href="https://element.eleme.cn/#/zh-CN/component/table">el-table</a> 组件保持一致。并提供了一些方便和自定义的 api，加快书写。</p>
+<h2 id="代码实现">代码实现</h2>
+<pre><code class="language-js">&lt;script&gt;
+import { formatDate } from 'element-ui/lib/utils/date-util';
+
+function isObject (obj) {
+  return Object.prototype.toString.call(obj) === '[object Object]';
+};
+
+function isNil (val) {
+  return val === undefined || val === null;
+};
+
+function getEnumValue (value, _enum) {
+  const valueEnum = _enum || undefined;
+  return valueEnum &amp;&amp; valueEnum[value] ? valueEnum[value] : value;
+};
+
+export default {
+  name: 'ElProTable',
+
+  props: {
+    data: {
+      type: Array,
+      default: () =&gt; ([])
+    },
+    columns: {
+      type: Array,
+      default: () =&gt; ([])
+    },
+    loading: Boolean
+  },
+
+  mounted () {
+    this.mountTableMethods();
+  },
+
+  methods: {
+    // 在 this 上挂载 table 组件实例方法
+    mountTableMethods() {
+      const ElTableMethodKeys = ['clearSelection', 'toggleRowSelection', 'toggleAllSelection', 'toggleRowExpansion', 'setCurrentRow', 'clearSort', 'clearFilter', 'doLayout', 'sort'];
+      Object.entries(this.$refs.table).forEach(([key, item]) =&gt; {
+        if (ElTableMethodKeys.includes(key)) {
+          this[key] = item;
+        }
+      });
+    },
+
+    generateValue ({ prop, valueType, enum: _enum }) {
+      if (!prop) return null;
+      return (scoped) =&gt; {
+        const row = scoped.row || {};
+        let value = row[prop];
+        switch (valueType) {
+          case 'date':
+            value = formatDate(value);
+            break;
+          case 'dateTime':
+            value = formatDate(value, 'yyyy-MM-dd HH:mm:ss');
+            break;
+          case 'text':
+          default: value = getEnumValue(value, _enum);
+        };
+        return value;
+      };
+    },
+
+    renderColumns (h, columns) {
+      const $scopedSlots = this.$scopedSlots;
+      return columns.map((item, i) =&gt; {
+        if (!isObject(item)) return null;
+        const key = !isNil(item.prop) ? item.prop : i;
+        const { render, renderHeader, slot, slotHeader, columns: _columns, ...props } = item;
+        const scopedSlots = {
+          default: render ? (scoped) =&gt; render(h, scoped) : $scopedSlots[slot] || this.generateValue(item),
+          header: renderHeader ? (scoped) =&gt; renderHeader(h, scoped) : $scopedSlots[slotHeader] || null
+        };
+        // 通过递归处理多级表头的情况
+        return &lt;el-table-column key={ key } { ...{ props } } scopedSlots={ scopedSlots }&gt;
+          { Array.isArray(_columns) ? this.renderColumns(h, _columns) : null }
+        &lt;/el-table-column&gt;;
+      });
+    }
+  },
+
+  render (h) {
+    return (
+      &lt;div class=&quot;el-pro-table&quot;&gt;
+        &lt;el-table
+          ref=&quot;table&quot;
+          { ...{ props: this.$attrs } }
+          { ...{ on: this.$listeners } }
+          data={ this.data }
+          v-loading={ this.loading }
+        &gt;
+          { this.renderColumns(h, this.columns) }
+        &lt;/el-table&gt;
+      &lt;/div&gt;
+    );
+  }
+};
+&lt;/script&gt;
+</code></pre>
+<h2 id="基本使用">基本使用</h2>
+<figure data-type="image" tabindex="1"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/31992c4ad447.png" alt="" loading="lazy"></figure>
+<pre><code class="language-js">&lt;template&gt;
+  &lt;el-pro-table :data=&quot;dataSource&quot; :columns=&quot;columns&quot; /&gt;
+&lt;/template&gt;
+
+&lt;script&gt;
+export default {
+  data () {
+    return {
+      columns: [
+        {
+          prop: 'name',
+          label: 'Name'
+        },
+        {
+          prop: 'age',
+          label: 'Age'
+        },
+        {
+          prop: 'address',
+          label: 'Address'
+        }
+      ],
+      dataSource: [
+        { name: 'Yu Lou', age: 32, address: 'New York No. 1 Lake Park' },
+        { name: 'Jim Green', age: 42, address: 'London No. 1 Lake Park' },
+        { name: 'Joe Black', age: 32, address: 'Sidney No. 1 Lake Park' },
+      ]
+    }
+  }
+}
+&lt;/script&gt;
+</code></pre>
+<h2 id="使用-valuetype">使用 valueType</h2>
+<p>封装了一些常用的值类型来减少重复的 render 操作，通过在 columns 数据项中配置一个 valueType 即可展示格式化的数据。</p>
+<figure data-type="image" tabindex="2"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/74950AD8-AFFA-4267-926F-ADAA1736977D.png" alt="" loading="lazy"></figure>
+<pre><code class="language-js">&lt;template&gt;
+  &lt;el-pro-table :data=&quot;dataSource&quot; :columns=&quot;columns&quot; /&gt;
+&lt;/template&gt;
+
+&lt;script&gt;
+export default {
+  data () {
+    return {
+      columns: [
+        {
+          prop: 'title',
+          label: 'Title'
+        },
+        {
+          prop: 'createTime',
+          label: 'Time',
+          valueType: 'dateTime'
+        },
+        {
+          prop: 'state',
+          label: 'State'
+        },
+      ],
+      dataSource: [
+        { title: 'title 1', createTime: 1616495706550, state: 'open' },
+        { title: 'title 2', createTime: 1616405700550, state: 'closed' },
+      ]
+    }
+  }
+}
+&lt;/script&gt;
+</code></pre>
+<h2 id="使用-enum">使用 enum</h2>
+<p>通过在 columns 数据项中配置 enum 对象，将状态值转为对应的描述。</p>
+<figure data-type="image" tabindex="3"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/28D3F346-49B6-4592-98D2-5DC6588E081D.png" alt="" loading="lazy"></figure>
+<pre><code class="language-js">&lt;template&gt;
+  &lt;el-pro-table :data=&quot;dataSource&quot; :columns=&quot;columns&quot; /&gt;
+&lt;/template&gt;
+
+&lt;script&gt;
+export default {
+  data () {
+    return {
+      columns: [
+        {
+          prop: 'title',
+          label: 'Title'
+        },
+        {
+          prop: 'state',
+          label: 'State',
+          enum: {
+            open: '未解决',
+            closed: '已解决'
+          }
+        },
+      ],
+      dataSource: [
+        { title: 'title 1', state: 'open' },
+        { title: 'title 2', state: 'closed' },
+      ]
+    }
+  }
+}
+&lt;/script&gt;
+</code></pre>
+<h2 id="自定义列">自定义列</h2>
+<figure data-type="image" tabindex="4"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/5FD717E8-A446-42E7-A9FB-71ADB6F1E7CD.png" alt="" loading="lazy"></figure>
+<h3 id="render-写法">render 写法</h3>
+<p>通过给 columns 数据的项，设置一个函数 render，可以自定义渲染当前列，包括渲染自定义组件，它基于 Vue 的 Render 函数。</p>
+<p>render 函数传入两个参数，第一个是 h，第二个是对象，包含 row、column 和 $index，分别指当前行数据，当前列数据，当前是第几行。</p>
+<pre><code class="language-js">&lt;template&gt;
+  &lt;el-pro-table :data=&quot;dataSource&quot; :columns=&quot;columns&quot; /&gt;
+&lt;/template&gt;
+
+&lt;script&gt;
+export default {
+  data () {
+    return {
+      columns: [
+        {
+          prop: 'name',
+          label: 'Name'
+        },
+        {
+          prop: 'age',
+          label: 'Age'
+        },
+        {
+          prop: 'address',
+          label: 'Address'
+        },
+        {
+          label: 'Action',
+          render (h, { row }) {
+            return (
+              &lt;div&gt;
+                &lt;el-button type=&quot;text&quot;&gt;Invite { row.name }&lt;/el-button&gt;
+                &lt;el-button type=&quot;text&quot;&gt;Delete&lt;/el-button&gt;
+              &lt;/div&gt;
+            )
+          }
+        }
+      ],
+      dataSource: [
+        { name: 'Yu Lou', age: 32, address: 'New York No. 1 Lake Park' },
+        { name: 'Jim Green', age: 42, address: 'London No. 1 Lake Park' },
+        { name: 'Joe Black', age: 32, address: 'Sidney No. 1 Lake Park' },
+      ]
+    }
+  }
+}
+&lt;/script&gt;
+</code></pre>
+<h3 id="slot-scope-写法">slot-scope 写法</h3>
+<p>在 columns 的某列声明 slot 后，就可以在 Table 的 slot 中使用 slot-scope。</p>
+<p>slot-scope 的参数有 3 个：当前行数据 row，当前列数据 column，当前行序号 $index。</p>
+<pre><code class="language-js">&lt;template&gt;
+  &lt;el-pro-table :data=&quot;dataSource&quot; :columns=&quot;columns&quot;&gt;
+    &lt;template slot-scope=&quot;{ row }&quot; slot=&quot;action&quot;&gt;
+      &lt;el-button type=&quot;text&quot;&gt;Invite {{ row.name }}&lt;/el-button&gt;
+      &lt;el-button type=&quot;text&quot;&gt;Delete&lt;/el-button&gt;
+    &lt;/template&gt;
+  &lt;/el-pro-table&gt;
+&lt;/template&gt;
+
+&lt;script&gt;
+export default {
+  data () {
+    return {
+      columns: [
+        {
+          prop: 'name',
+          label: 'Name'
+        },
+        {
+          prop: 'age',
+          label: 'Age'
+        },
+        {
+          prop: 'address',
+          label: 'Address'
+        },
+        {
+          label: 'Action',
+          slot: 'action'
+        }
+      ],
+      dataSource: [
+        { name: 'Yu Lou', age: 32, address: 'New York No. 1 Lake Park' },
+        { name: 'Jim Green', age: 42, address: 'London No. 1 Lake Park' },
+        { name: 'Joe Black', age: 32, address: 'Sidney No. 1 Lake Park' },
+      ]
+    }
+  }
+}
+&lt;/script&gt;
+</code></pre>
+<h2 id="自定义表头">自定义表头</h2>
+<figure data-type="image" tabindex="5"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/24847B3C-8FCC-4080-958C-7CAD1291A155.png" alt="" loading="lazy"></figure>
+<h3 id="render-写法-2">render 写法</h3>
+<p>通过给 columns 数据的项，设置一个函数 renderHeader，可以自定义渲染当前列表头，包括渲染自定义组件，它基于 Vue 的 Render 函数。</p>
+<p>renderHeader 函数传入两个参数，第一个是 h，第二个是对象，包含 column 和 $index，分别指当前列数据，当前是第几行。</p>
+<pre><code class="language-js">&lt;template&gt;
+  &lt;el-pro-table :data=&quot;tableData&quot; :columns=&quot;columns&quot; /&gt;
+&lt;/template&gt;
+
+&lt;script&gt;
+export default {
+  data () {
+    return {
+      search: '',
+      columns: [
+        {
+          prop: 'date',
+          label: 'Date'
+        },
+        {
+          prop: 'name',
+          label: 'Name'
+        },
+        {
+          align: 'right',
+          renderHeader: (h, scoped) =&gt; {
+            return &lt;el-input value={ this.search } on-input={ this.onInput } size=&quot;small&quot; placeholder=&quot;Search&quot; /&gt;
+          },
+          render (h) {
+            return &lt;el-button size=&quot;small&quot;&gt;Edit&lt;/el-button&gt;
+          }
+        }
+      ],
+      dataSource: [
+        { date: '2016-05-03', name: 'Yu Lou' },
+        { date: '2016-05-02', name: 'Jim Green' },
+        { date: '2016-05-04', name: 'Joe Black' }
+      ]
+    }
+  },
+  computed: {
+    tableData () {
+      const { dataSource, search } = this
+      return dataSource.filter(data =&gt; !search || data.name.toLowerCase().includes(search.toLowerCase()))
+    }
+  },
+  methods: {
+    onInput (value) {
+      this.search = value
+    }
+  }
+}
+&lt;/script&gt;
+</code></pre>
+<h3 id="slot-scope-写法-2">slot-scope 写法</h3>
+<p>在 columns 的某列声明 slotHeader 后，就可以在 Table 的 slot 中使用 slot-scope。</p>
+<p>slot-scope 的参数有 3 个：当前行数据 row，当前列数据 column，当前行序号 $index。</p>
+<pre><code class="language-js">&lt;template&gt;
+  &lt;el-pro-table :data=&quot;tableData&quot; :columns=&quot;columns&quot;&gt;
+    &lt;template slot-scope=&quot;scope&quot; slot=&quot;search&quot;&gt;
+      &lt;el-input v-model=&quot;search&quot; size=&quot;small&quot; placeholder=&quot;Search&quot; /&gt;
+    &lt;/template&gt;
+    &lt;template slot-scope=&quot;scope&quot; slot=&quot;action&quot;&gt;
+      &lt;el-button size=&quot;small&quot;&gt;Edit&lt;/el-button&gt;
+    &lt;/template&gt;
+  &lt;/el-pro-table&gt;
+&lt;/template&gt;
+
+&lt;script&gt;
+export default {
+  data () {
+    return {
+      search: '',
+      columns: [
+        {
+          prop: 'date',
+          label: 'Date'
+        },
+        {
+          prop: 'name',
+          label: 'Name'
+        },
+        {
+          align: 'right',
+          slotHeader: 'search',
+          slot: 'action'
+        }
+      ],
+      dataSource: [
+        { date: '2016-05-03', name: 'Yu Lou' },
+        { date: '2016-05-02', name: 'Jim Green' },
+        { date: '2016-05-04', name: 'Joe Black' }
+      ]
+    }
+  },
+  computed: {
+    tableData () {
+      const { dataSource, search } = this
+      return dataSource.filter(data =&gt; !search || data.name.toLowerCase().includes(search.toLowerCase()))
+    }
+  }
+}
+&lt;/script&gt;
+</code></pre>
+<h2 id="多级表头">多级表头</h2>
+<figure data-type="image" tabindex="6"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/D62384C3-9944-468A-9072-5AA14FC5854B.png" alt="" loading="lazy"></figure>
+<p>在 columns 配置项中可以内嵌 columns，以渲染多级表头。</p>
+<pre><code class="language-js">&lt;template&gt;
+  &lt;el-pro-table :data=&quot;dataSource&quot; :columns=&quot;columns&quot; /&gt;
+&lt;/template&gt;
+
+&lt;script&gt;
+export default {
+  data () {
+    return {
+      columns: [
+        {
+          prop: 'date',
+          label: '日期',
+          width: '150'
+        },
+        {
+          label: '配送信息',
+          columns: [
+            {
+              prop: 'name',
+              label: '姓名',
+              width: '120'
+            },
+            {
+              label: '地址',
+              columns: [
+                {
+                  prop: 'province',
+                  label: '省份',
+                  width: '120'
+                },
+                {
+                  prop: 'city',
+                  label: '市区',
+                  width: '120'
+                },
+                {
+                  prop: 'address',
+                  label: '详细地址'
+                },
+                {
+                  prop: 'zip',
+                  label: '邮编',
+                  width: '120'
+                }
+              ]
+            },
+          ]
+        }
+      ],
+      dataSource: [
+        { date: '2016-05-03', name: 'Yu Lou', province: '浙江省', city: '杭州市', address: 'Fu Ding No. 1 Lake Park', zip: 200333 },
+        { date: '2016-05-02', name: 'Yu Lou', province: '浙江省', city: '杭州市', address: 'Fu Ding No. 1 Lake Park', zip: 200333 },
+        { date: '2016-05-04', name: 'Yu Lou', province: '浙江省', city: '杭州市', address: 'Fu Ding No. 1 Lake Park', zip: 200333 },
+        { date: '2016-05-01', name: 'Yu Lou', province: '浙江省', city: '杭州市', address: 'Fu Ding No. 1 Lake Park', zip: 200333 },
+        { date: '2016-05-08', name: 'Yu Lou', province: '浙江省', city: '杭州市', address: 'Fu Ding No. 1 Lake Park', zip: 200333 },
+        { date: '2016-05-08', name: 'Yu Lou', province: '浙江省', city: '杭州市', address: 'Fu Ding No. 1 Lake Park', zip: 200333 },
+        { date: '2016-05-08', name: 'Yu Lou', province: '浙江省', city: '杭州市', address: 'Fu Ding No. 1 Lake Park', zip: 200333 }
+      ]
+    }
+  },
+}
+&lt;/script&gt;
+</code></pre>
+<h2 id="table-props">Table Props</h2>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>类型</th>
+<th>可选值</th>
+<th>默认值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>columns</td>
+<td>表格列的配置描述，详见 <a href="#column">column</a> 配置</td>
+<td>array</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>data</td>
+<td>显示的数据</td>
+<td>array</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>loading</td>
+<td>是否加载中</td>
+<td>boolean</td>
+<td>-</td>
+<td>false</td>
+</tr>
+<tr>
+<td>...</td>
+<td>其他 <a href="https://element.eleme.cn/#/zh-CN/component/table#table-attributes">el-table</a> 组件支持的属性</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h3 id="column">Column</h3>
+<p>列描述数据对象。column 支持 <a href="https://element.eleme.cn/#/zh-CN/component/table#table-column-attributes">el-table-column</a> 已有的 props 配置，但是也提供了一些方便和自定义的 api，加快书写:</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>类型</th>
+<th>可选值</th>
+<th>默认值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>render</td>
+<td>自定义渲染列，使用 Vue 的 Render 函数。传入两个参数，第一个是 h，第二个为对象，包含 row、column 和 index，分别指当前行数据，当前列数据，当前行索引，详见示例</td>
+<td>function</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>renderHeader</td>
+<td>自定义列头显示内容，使用 Vue 的 Render 函数。传入两个参数，第一个是 h，第二个为对象，包含 column 和 index，分别指当前行数据，当前列数据，当前行索引，详见示例</td>
+<td>function</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>slot</td>
+<td>与 slot-scope 结合使用，自定义渲染列</td>
+<td>string</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>slotHeader</td>
+<td>与 slot-scope 结合使用，自定义列头</td>
+<td>string</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>valueType</td>
+<td>当前列值的类型，详见 <a href="#valuetype">valueType</a> 配置</td>
+<td>string</td>
+<td>text / date / dateTime</td>
+<td>text</td>
+</tr>
+<tr>
+<td>enum</td>
+<td>当前列值的枚举</td>
+<td>object</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>render、slot、valueType、enum 同时配置时，会有渲染优先级。render 渲染级别最高。一般情况下：render &gt; slot &gt; valueType / enum。配置自定义 header 时同理。</p>
+</blockquote>
+<h3 id="valuetype">ValueType</h3>
+<p>封装了一些常用的值类型来减少重复的 render 操作，配置一个 valueType 即可展示格式化响应的数据。</p>
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>text</td>
+<td>普通的文本类型</td>
+</tr>
+<tr>
+<td>date</td>
+<td>当数据是日期类型的返回时，会自动将格式转换为 '2020-10-20'</td>
+</tr>
+<tr>
+<td>dateTime</td>
+<td>当数据是日期类型的返回时，会自动将格式转换为 '2020-10-20 19:30:00'</td>
+</tr>
+<tr>
+<td>...</td>
+<td>陆续添加中</td>
+</tr>
+</tbody>
+</table>
+<h3 id="table-events">Table Events</h3>
+<table>
+<thead>
+<tr>
+<th>事件名称</th>
+<th>说明</th>
+<th>回调参数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>...</td>
+<td><a href="https://element.eleme.cn/#/zh-CN/component/table#table-events">el-table</a> 组件支持的事件</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h3 id="table-methods">Table Methods</h3>
+<p>支持 <a href="https://element.eleme.cn/#/zh-CN/component/table#table-methods">el-table</a> 所有的 methods.</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[编写一个 markdown-loader]]></title>
+        <id>https://jiangrubin.github.io/post/hP91A8M2P/</id>
+        <link href="https://jiangrubin.github.io/post/hP91A8M2P/">
+        </link>
+        <updated>2021-02-11T13:34:50.000Z</updated>
+        <content type="html"><![CDATA[<h2 id="前言">前言</h2>
+<p>项目中我们会用到一些 markdown 文件作为文档在页面中展示。基本原理是用 js 去读取解析文件，最后渲染出来。所以我们可以在 webpack 编译的过程中将 markdown 文件编译为 js 模块，然后在页面中直接引入。</p>
+<p>在了解 webpack 之后知道，每一个 loader 其实都是一个函数，函数接收资源，进行一定的处理之后输出给下一个 loader。明白了这个基本原理，我们也可以编写一个自己的 loader。</p>
+<p>话不多说，进入正题。</p>
+<h2 id="代码实现">代码实现</h2>
+<p>其中核心库使用了 <a href="https://github.com/markdown-it/markdown-it">markdown-it</a>、<a href="https://github.com/medfreeman/markdown-it-toc-and-anchor">markdown-it-toc-and-anchor</a>，将 md 文件转为 html 字符串，以及获取 md 内容中的标题目录列表。</p>
+<p>创建 <code>markdown-loader.js</code> 文件，代码如下：</p>
+<pre><code class="language-js">const MarkdownIt = require('markdown-it')
+const MarkdownItTocAndAnchor = require(&quot;markdown-it-toc-and-anchor&quot;).default
+
+const markdownIt = new MarkdownIt({
+  html: true
+}).use(MarkdownItTocAndAnchor, {
+  anchorLink: false
+})
+
+module.exports = function (source) {
+  let tocArray = []
+  
+  let content = markdownIt.render(source, {
+    tocCallback (markdown, array, html) {
+      tocArray = array
+    }
+  })
+
+  // 最后返回一个 js 对象，包含文本内容和目录列表两个属性
+  return `export default {
+    content: \`${content}\`,
+    tocArray: ${JSON.stringify(tocArray)}
+  }`
+}
+</code></pre>
+<p>假设使用 vue-cli 搭建的项目，可在 <code>vue.config.js</code> 中配置如下：</p>
+<pre><code class="language-js">const path = require('path')
+
+module.exports = {
+  chainWebpack: config =&gt; {
+    config
+      .module
+      .rule('md')
+      .test(/\.md$/)
+      .use('markdown-loader')
+      .loader(path.resolve(__dirname, './markdown-loader.js'))
+      .end()
+  }
+}
+</code></pre>
+<p>在文件中引入 md 文件，查看打印输出。</p>
+<pre><code class="language-js">import demo from './demo.md'
+
+console.log(demo);
+</code></pre>
+<figure data-type="image" tabindex="1"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/5465D8631B75.jpg" alt="" loading="lazy"></figure>
+<h2 id="使用">使用</h2>
+<pre><code class="language-js">&lt;template&gt;
+  &lt;div class=&quot;doc&quot;&gt;
+    &lt;div class=&quot;doc-summary&quot;&gt;
+      &lt;ul class=&quot;doc-toc&quot;&gt;
+        &lt;template v-for=&quot;(item, i) of tocArray&quot;&gt;
+          &lt;li :class=&quot;doc-toc-item&quot; :key=&quot;i&quot;&gt;{{ item.content }}&lt;/li&gt;
+        &lt;/template&gt;
+      &lt;/ul&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;doc-main&quot;&gt;
+      &lt;section class=&quot;doc-content markdown-body&quot; v-html=&quot;content&quot;&gt;&lt;/section&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/template&gt;
+
+&lt;script&gt;
+import demo from './demo.md'
+
+export default {
+  data () {
+    return {
+      content: '',
+      tocArray: [],
+    }
+  },
+  created () {
+    const { content, tocArray } = demo
+    this.content = content
+    this.tocArray = tocArray
+  }
+}
+&lt;/script&gt;
+
+&lt;style lang=&quot;scss&quot;&gt;
+// 使用社区中提供的 github-markdown-css 样式，就可以有和 github 一样的效果了。
+// https://github.com/sindresorhus/github-markdown-css
+@import './github-markdown.css';
+
+...
+&lt;/style&gt;
+</code></pre>
+<p>效果如下图所示：</p>
+<figure data-type="image" tabindex="2"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host@master/0AF8ED7086F6.jpeg" alt="" loading="lazy"></figure>
+<h2 id="总结">总结</h2>
+<p>在项目中写一些小工具还是蛮有意思的 😘</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[微信小程序开发笔记]]></title>
+        <id>https://jiangrubin.github.io/post/Z5i7FBxxd/</id>
+        <link href="https://jiangrubin.github.io/post/Z5i7FBxxd/">
+        </link>
+        <updated>2020-09-27T03:03:46.000Z</updated>
+        <content type="html"><![CDATA[<h2 id="前言">前言</h2>
+<p>最近在开发小程序项目，将项目中遇到的问题和要点记录下来，方便以后查阅。</p>
+<h2 id="字体">字体</h2>
+<h3 id="全局字体">全局字体</h3>
+<p>项目中使用了 <a href="https://vant-contrib.gitee.io/vant-weapp/#/intro">vant-weapp</a>，有赞开源的小程序组件库。</p>
+<p>为保证在不同设备上提供最佳的视觉体验，且与组件库风格统一，可在 app.wxss 中设置以下全局字体。</p>
+<pre><code class="language-css">page {
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica,
+    Segoe UI, Arial, Roboto, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft Yahei',
+    sans-serif;
+}
+</code></pre>
+<h3 id="字号单位">字号单位</h3>
+<p>字号单位用 px，不同分辨率设备上字体大小保持一致，取值尽量是偶数。</p>
+<p>可以将常用的字号写成 css 变量，方便使用。</p>
+<pre><code class="language-css">page {
+    --font-size-xs: 10px;
+    --font-size-sm: 12px;
+    --font-size-md: 14px;
+    --font-size-lg: 16px;
+    --font-size-xl: 18px;
+    --font-size-xxl: 24px;
+}
+
+view {
+    font-size: var(--font-size-md);
+}
+</code></pre>
+<h2 id="图片资源">图片资源</h2>
+<p>项目中经常会使用图片、SVG 等文件，而这些文件占据项目体积很大的比重。因小程序包体积限制，需要对图片文件进行压缩处理。</p>
+<ul>
+<li>
+<p><a href="https://tinypng.com/">TinyPNG 图片压缩</a></p>
+</li>
+<li>
+<p><a href="https://www.zhangxinxu.com/sp/svgo/">SVG 在线压缩合并工具</a></p>
+</li>
+</ul>
+<h2 id="wxs-工具方法">WXS 工具方法</h2>
+<p><a href="https://developers.weixin.qq.com/miniprogram/dev/reference/wxs/">WXS</a> 是小程序的一套脚本语言。语法跟 JavaScript 类似，但其中有一些坑。比如不能遍历对象。没有 Object 对象，不能使用 <code>for ... in ...</code>。小程序社区里也有关于这个的<a href="https://developers.weixin.qq.com/community/develop/doc/000680569f81100755279069856000?highLine=wxs%2520%25E9%2581%258D%25E5%258E%2586%25E5%25AF%25B9%25E8%25B1%25A1">吐槽</a>。</p>
+<p>只能通过正则的方式来实现对象的遍历方法：</p>
+<pre><code class="language-js">// object.wxs
+var REGEXP = getRegExp('{|}|&quot;', 'g');
+
+function keys (obj) {
+  return JSON.stringify(obj)
+    .replace(REGEXP, '')
+    .split(',')
+    .map(function(item) {
+      return item.split(':')[0]
+    })
+}
+
+function values (obj) {
+  return JSON.stringify(obj)
+    .replace(REGEXP, '')
+    .split(',')
+    .map(function(item) {
+      return item.split(':')[1]
+    })
+}
+
+module.exports = {
+  keys: keys,
+  values: values,
+}
+</code></pre>
+<h2 id="iphonex-适配">iPhoneX 适配</h2>
+<p>屏幕上边框，右边框，下边框，左边框安全距离：</p>
+<pre><code>safe-area-inset-top
+safe-area-inset-right
+safe-area-inset-bottom
+safe-area-inset-left
+</code></pre>
+<p>使用：</p>
+<p>iOS 11</p>
+<pre><code class="language-css">padding-top: constant(safe-area-inset-top);
+padding-right: constant(safe-area-inset-right);
+padding-bottom: constant(safe-area-inset-bottom);
+padding-left: constant(safe-area-inset-left);
+</code></pre>
+<p>iOS 11.2 beta 及其后</p>
+<pre><code class="language-css">padding-top: env(safe-area-inset-top);
+padding-right: env(safe-area-inset-right);
+padding-bottom: env(safe-area-inset-bottom);
+padding-left: env(safe-area-inset-left);
+</code></pre>
+<p>兼容性写法：</p>
+<pre><code class="language-css">padding-top: constant(safe-area-inset-top);
+padding-top: env(safe-area-inset-top);
+</code></pre>
+<p>参考文档：<a href="https://webkit.org/blog/7929/designing-websites-for-iphone-x/?hmsr=funteas.com&amp;utm_medium=funteas.com&amp;utm_source=funteas.com">苹果官方文档</a></p>
+<h2 id="ios-中-promise-对象不存在-finally-方法">iOS 中 Promise 对象不存在 finally 方法</h2>
+<p>在开发者工具中没有这个问题，只在 iOS 真机中存在。不知小程序官方是否修复了此 bug。</p>
+<p>在 app.js 中添加如下代码：</p>
+<pre><code class="language-js">if (!Promise.prototype.finally) {
+  Promise.prototype.finally = function (callback) {
+    this.then(res =&gt; {
+      callback &amp;&amp; callback(res)
+    }, error =&gt; {
+      callback &amp;&amp; callback(error)
+    })
+  }
+}
+</code></pre>
+<h2 id="引入路径">引入路径</h2>
+<p>在小程序中 <code>import ... from ...</code> 和 <code>require</code> 不支持绝对路径。只能使用相对路径引入，如果目录过深就会写成 <code>../../../../util.js</code>，不够直观优雅。</p>
+<p>可以通过以下方式优化引入：</p>
+<pre><code class="language-js">// app.js 中
+App({
+    require (path) {
+        return require(`${path}`)
+    }
+})
+</code></pre>
+<p>在其他 page 和组件中，就可以统一相对于根路径引入。</p>
+<pre><code class="language-js">const app = getApp()
+const { formatTime } = app.require('/utils/util')
+</code></pre>
+<h2 id="sku-商品规格">SKU 商品规格</h2>
+<blockquote>
+<p>SKU 是指物理上不可分割的最小存货单元</p>
+</blockquote>
+<p>开发的是电商类型项目，SKU 商品规格选择功能是必不可少的，也是项目中比较复杂的功能。将功能封装为组件，具体的代码查看该<a href="https://github.com/jiangrubin/weapp-sku">地址</a>。</p>
+<figure data-type="image" tabindex="1"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/406936562400.png" alt="" loading="lazy"></figure>
+<h3 id="笛卡尔积应用">笛卡尔积应用</h3>
+<p>SKU 商品规格选择是 C 端的功能，其中还涉及到如何生成商品 SKU 数据。也就是笛卡尔积的应用。</p>
+<p>如上图所示，通过“颜色”和“尺寸”2个销售属性来生成商品的 SKU，就需要对属性的值做笛卡尔积，其中核心代码如下：</p>
+<pre><code class="language-js">/**
+ * @desc 多数组求笛卡尔积
+ * @param { Array } array [['粉色', '黄色', '蓝色'], ['大', '小']]
+ * @return { Array } ['粉色', '大'], ['粉色', '小'], ['黄色', '大'], ['黄色', '小'], ['蓝色', '大'], ['蓝色', '小']
+ */
+function cartesianProduct (array) {
+  return array.reduce(function (a, b) {
+    return a.map(function (x) {
+      return b.map(function (y) {
+        return x.concat(y)
+      })
+    }).reduce(function (a, b) { return a.concat(b) }, [])
+  }, [[]])
+}
+</code></pre>
+<h2 id="总结">总结</h2>
+<p>这些都是最近项目中记录下来的，欢迎大家交流，以后开发中碰到了其他问题也会持续更新的。</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[数据结构与算法 — 递归]]></title>
+        <id>https://jiangrubin.github.io/post/MPPwT3CbK/</id>
+        <link href="https://jiangrubin.github.io/post/MPPwT3CbK/">
+        </link>
+        <updated>2020-05-31T07:17:07.000Z</updated>
+        <content type="html"><![CDATA[<h2 id="前言">前言</h2>
+<p>递归是算法中一种非常重要的思想，应用非常广泛。是DFS、分治法、回溯、二叉树遍历等方法的基础。先从学习这些方法的基础开始。</p>
+<h2 id="什么是递归">什么是递归</h2>
+<p>程序调用自身的编程技巧称为递归（ recursion）。 一个过程或函数在其定义或说明中有直接或间接调用自身的一种方法，它通常把一个大型复杂的问题层层转化为一个与原问题相似的规模较小的问题来求解。</p>
+<p>像下面这样直接调用自身的函数：</p>
+<pre><code class="language-js">function recursion(param){
+    recursion(param)
+}
+</code></pre>
+<p>间接调用自身的函数，也是递归函数：</p>
+<pre><code class="language-js">function recursion1(param){
+    recursion2(param)
+}
+
+function recursion2(param){
+    recursion1(param)
+}
+</code></pre>
+<p>假设现在执行 recursion 函数，就上述情况而言，其会一直执行下去。因此，每个递归函数都必须要有边界条件，即一个不再递归调用的条件，以防止无限递归。</p>
+<p>如果忘记加上用以停止函数递归调用的边界条件，在浏览器中执行，递归并不会无限地执行下去，浏览器会抛出错误 <code>Maximum call stack size exceeded</code> 也就是所谓的栈溢出。</p>
+<p>以阶乘为例，体会一下递归：</p>
+<pre><code class="language-js">function factorial(n) {
+    if (n &lt;= 1) {
+        return 1
+    }
+    return n * factorial(n - 1)
+}
+
+factorial(6) // 6 * 5 * 4 * 3 * 2 * 1 = 720
+</code></pre>
+<p>factorial 是一个实现阶乘的函数，来看下它的调用过程。</p>
+<figure data-type="image" tabindex="1"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1590918559854.jpg" alt="" loading="lazy"></figure>
+<p>从这个例子中可以看出，阶乘中的 <code>n &lt;= 1</code> 是边界条件，当边界条件不满足时，递归前进，当边界条件满足时，递归返回。构成递归需具备边界条件、递归前进段和递归返回段。</p>
+<h2 id="斐波那契数列">斐波那契数列</h2>
+<p>斐波那契指的是这样一个数列：1、1、2、3、5、8、13、21、34 ...，这个数列从第3项开始，每一项都等于前两项之和。</p>
+<h3 id="递归实现">递归实现</h3>
+<pre><code class="language-js">function fibonacci(n) {
+    if (n &lt;= 2) {
+        return 1
+    }
+    return fibonacci(n - 1) + fibonacci(n - 2)
+}
+
+console.log(fibonacci(6)) // 8
+</code></pre>
+<p>但是当参数 n 变大时，浏览器卡死了。原因是此函数中存在着大量的冗余计算，并且 n 越大，冗余的越多。如下图所示：</p>
+<figure data-type="image" tabindex="2"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1590919586864.png" alt="" loading="lazy"></figure>
+<p>图中每个分支上的函数都是单独调用的，并且都是重复的调用，针对这种冗余计算，我们可以做相关的优化，优化的思路都是减少相同函数的重复调用。</p>
+<h3 id="迭代实现">迭代实现</h3>
+<pre><code class="language-js">function fibonacci(num){
+    var n1 = 1,
+    n2 = 1,
+    n = 1;
+    for (var i = 3; i &lt;= num; i++){
+        n = n1 + n2;
+        n1 = n2;
+        n2 = n;
+    }
+    return n;
+} 
+</code></pre>
+<h3 id="尾调用优化">尾调用优化</h3>
+<pre><code class="language-js">function fibonacci (n, res1 = 1, res2 = 1) {
+    if (n &lt;= 2) {
+        return res2
+    }
+    return fibonacci(n - 1, res2, res1 + res2)
+}
+</code></pre>
+<h2 id="应用场景">应用场景</h2>
+<p>一些 JavaScript 的工具方法中涉及到了递归。</p>
+<h3 id="深拷贝">深拷贝</h3>
+<pre><code class="language-js">function deepCopy (data) {
+    // 数据类型判断函数，见下
+    const t = typeOf(data)
+    let o
+
+    if (t === 'array') {
+        o = []
+    } else if (t === 'object') {
+        o = {}
+    } else {
+        return data
+    }
+
+    for (var key in data) {
+        o[key] = deepCopy(data[key])
+    }
+
+    return o
+}
+
+function typeOf (obj) {
+    const toString = Object.prototype.toString
+    const map = {
+        '[object Boolean]': 'boolean',
+        '[object Number]': 'number',
+        '[object String]': 'string',
+        '[object Function]': 'function',
+        '[object Array]': 'array',
+        '[object Date]': 'date',
+        '[object RegExp]': 'regExp',
+        '[object Undefined]': 'undefined',
+        '[object Null]': 'null',
+        '[object Object]': 'object'
+    }
+    return map[toString.call(obj)]
+}
+</code></pre>
+<h3 id="数组扁平化">数组扁平化</h3>
+<pre><code class="language-js">function flatten(arr) {
+    return arr.reduce(function(prev, next){
+        return prev.concat(Array.isArray(next) ? flatten(next) : next)
+    }, [])
+}
+</code></pre>
+<h2 id="总结">总结</h2>
+<p>学习了递归的基本使用和实现了 JavaScript 中常用的工具方法。关于递归的内容还有很多，比如还有汉诺塔、二叉树遍历等递归场景。算法之路漫漫 😬。</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[数据结构与算法 — 排序]]></title>
+        <id>https://jiangrubin.github.io/post/7GaeASM5b/</id>
+        <link href="https://jiangrubin.github.io/post/7GaeASM5b/">
+        </link>
+        <updated>2020-04-27T11:41:27.000Z</updated>
+        <content type="html"><![CDATA[<h2 id="前言">前言</h2>
+<blockquote>
+<p>程序 = 数据结构 + 算法</p>
+</blockquote>
+<p>要想在编程之路走的更远，学好数据结构与算法很重要。所以把学习的总结写成一个系列，使用自己熟悉的 JavaScript 语言，旨在入门数据结构与算法和方便以后复习。</p>
+<p>先从算法领域里基础的排序算法开始。</p>
+<h2 id="经典排序算法对比">经典排序算法对比</h2>
+<figure data-type="image" tabindex="1"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1588420187412.jpg" alt="" loading="lazy"></figure>
+<p><strong>名词解释：</strong></p>
+<p><strong>n</strong>: 待排序列的个数<br>
+<strong>k</strong>: “桶”的个数<br>
+<strong>In-place</strong>: 原地算法，指的是占用常用内存，不占用额外内存。空间复杂度为 O(1) 的都可以认为是原地算法<br>
+<strong>Out-place</strong>: 非原地算法，占用额外内存<br>
+<strong>稳定性</strong>：排序后2个相等键值的顺序和排序之前它们的顺序相同</p>
+<h2 id="冒泡排序">冒泡排序</h2>
+<p>冒泡排序是一种简单的排序算法。它重复地走访过要排序的数列，一次比较两个元素，如果它们的顺序错误就把它们交换过来。走访数列的工作是重复地进行直到没有再需要交换，也就是说该数列已经排序完成。这个算法的名字由来是因为越小的元素会经由交换慢慢“浮”到数列的顶端。</p>
+<p><strong>算法描述：</strong></p>
+<ol>
+<li>比较相邻的元素。如果第一个比第二个大，就交换它们两个。</li>
+<li>对每一对相邻元素作同样的工作，从开始第一对到结尾的最后一对，这样在最后的元素应是最大的数。</li>
+<li>针对所有的元素重复以上的步骤，除了最后一个。</li>
+<li>重复步骤1~3，直到排序完成。</li>
+</ol>
+<figure data-type="image" tabindex="2"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1588422112893.gif" alt="" loading="lazy"></figure>
+<p><strong>代码实现：</strong></p>
+<pre><code class="language-js">function bubbleSort(array) {
+    var length = array.length
+    for (var i = 0; i &lt; length; i++) {
+        // length - 1 - i 从内循环减去外循环中已跑过的轮数，就可以避免内循环中所有不必要的比较
+        for (var j = 0; j &lt; length - 1 - i; j++) {
+            // 如果当前项比下一项大，则使用中间值进行交换
+            if (array[j] &gt; array[j + 1]) {
+                var temp = array[j] 
+                array[j] = array[j + 1]
+                array[j + 1] = temp
+            }
+        }
+    }
+    return array
+}
+
+bubbleSort([3, 44, 38, 5, 47, 15, 36, 26, 27, 2, 46, 4, 19, 50, 48])
+// [2, 3, 4, 5, 15, 19, 26, 27, 36, 38, 44, 46, 47, 48, 50]
+</code></pre>
+<h2 id="选择排序">选择排序</h2>
+<p>选择排序算法是一种原址比较排序算法。选择排序大致的思路是找到数据结构中的最小值并<br>
+将其放置在第一位，接着找到第二小的值并将其放在第二位，以此类推。</p>
+<figure data-type="image" tabindex="3"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1588422191480.gif" alt="" loading="lazy"></figure>
+<p><strong>代码实现：</strong></p>
+<pre><code class="language-js">function selectionSort (array) {
+    var length = array.length
+    var minIndex, temp
+    for (var i = 0; i &lt; length - 1; i ++) {
+        minIndex = i // 假设本次循环的第一个值为数组最小值
+        for (var j = i + 1; j &lt; length; j++) {
+            // 比较位置j的值是否比当前最小值小
+            if (array[j] &lt; array[minIndex]) {
+                minIndex = j // 如果是，则改变最小值的索引
+            }
+        }
+        // 如果该最小值和原最小值不同，则交换其值
+        if (i !== minIndex) {
+            temp = array[i]
+            array[i] = array[minIndex]
+            array[minIndex] = temp
+        }
+    }
+    return array
+}
+
+selectionSort([3, 44, 38, 5, 47, 15, 36, 26, 27, 2, 46, 4, 19, 50, 48])
+// [2, 3, 4, 5, 15, 19, 26, 27, 36, 38, 44, 46, 47, 48, 50]
+</code></pre>
+<p>选择排序同样也是一个复杂度为 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><msup><mi>n</mi><mn>2</mn></msup><mo>)</mo></mrow><annotation encoding="application/x-tex">O(n^2)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.064108em;vertical-align:-0.25em;"></span><span class="mord mathdefault" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mord"><span class="mord mathdefault">n</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141079999999999em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mclose">)</span></span></span></span> 的算法。和冒泡排序一样，它包含有嵌套的两个循环，这导致了二次方的复杂度。</p>
+<h2 id="插入排序">插入排序</h2>
+<p>插入排序每次排一个数组项，以此方式构建最后的排序数组。假定第一项已经排序了。取第二项向前进行比较，第二项是应该待在原位还是插到第一项之前呢？这样，头两项就已正确排序，接着和第三项比较（它是该插入到第一、第二还是第三的位置呢？），以此类推。</p>
+<figure data-type="image" tabindex="4"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1588422221669.gif" alt="" loading="lazy"></figure>
+<p><strong>代码实现：</strong></p>
+<pre><code class="language-js">function insertionSort (array) {
+    var length = array.length
+    var j, temp
+    // 是从第二个位置（索引1）而不是0位置开始的（假定第一项已排序了）
+    for (var i = 1; i &lt; length; i ++) {
+        // 用i的值来初始化一个辅助变量并将其值亦存储于一临时变量中，便于之后将其插入到正确的位置上
+        j = i
+        temp = array[i]
+        // 要变量j比0大，并且数组中前面的值比待比较的值大
+        // 就把这个值移到当前位置上并减小j
+        while (j &gt; 0 &amp;&amp; array[j - 1] &gt; temp) {
+            array[j] = array[j - 1]
+            j--
+        }
+        array[j] = temp
+    }
+    return array
+}
+</code></pre>
+<h2 id="归并排序">归并排序</h2>
+<p>归并排序是一种分治算法。其思想是将原始数组切分成较小的数组，直到每个小数组只有一<br>
+个位置，接着将小数组归并成较大的数组，直到最后只有一个排序完毕的大数组。</p>
+<figure data-type="image" tabindex="5"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1588422563704.gif" alt="" loading="lazy"></figure>
+<p><strong>代码实现：</strong></p>
+<pre><code class="language-js">function mergeSort (array) {
+    var length = array.length
+    // 由于算法是递归，需要一个停止条件
+    if (length &lt;= 1) {
+        return array
+    }
+    // 如果数组长度大于1，首先是找到数组的中间位，之后将数组分成left、right两个小数组
+    var mid = Math.floor(length / 2)
+    var left = array.slice(0, mid)
+    var right = array.slice(mid)
+    // 调用merge函数，它负责合并和排序小数组来产生大数组
+    // 为了不断将原始数组分成小数组，我们得再次对left数组和right数组递归调用mergeSort，并同时作为参数传递给merge函数
+    return merge(mergeSort(left), mergeSort(right))
+}
+
+function merge (left, right) {
+    // 声明归并过程要创建的新数组以及用来迭代两个数组（left和right）所需的两个变量
+    var result = [], il = 0, ir = 0
+    // 迭代两个数组的过程中，比较两个数组的项大小。将小的一方添加至结果数组，并递增迭代数组的控制变量
+    while (il &lt; left.length &amp;&amp; ir &lt; right.length) {
+        if (left[il] &lt; right[ir]) {
+            result.push(left[il++])
+        } else {
+            result.push(right[ir++])
+        }
+    }
+    // 接下来，分别将两个数组剩余的项添加到结果数组中
+    while (il &lt; left.length) {
+        result.push(left[il++])
+    }
+    while (ir &lt; right.length) {
+        result.push(right[ir++])
+    }
+    return result;
+}
+
+mergeSort([3, 44, 38, 5, 47, 15, 36, 26, 27, 2, 46, 4, 19, 50, 48])
+</code></pre>
+<p>归并排序性能不错，其复杂度为 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mi>n</mi><mi>l</mi><mi>o</mi><msup><mi>g</mi><mi>n</mi></msup><mo>)</mo></mrow><annotation encoding="application/x-tex">O(n log^n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mord mathdefault">n</span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mord mathdefault">o</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.03588em;">g</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.664392em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">n</span></span></span></span></span></span></span></span><span class="mclose">)</span></span></span></span>。</p>
+<h2 id="快速排序">快速排序</h2>
+<p>快速排序是最快的排序算法之一，它的复杂度为 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mi>n</mi><mi>l</mi><mi>o</mi><msup><mi>g</mi><mi>n</mi></msup><mo>)</mo></mrow><annotation encoding="application/x-tex">O(nlog^n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mord mathdefault">n</span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mord mathdefault">o</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.03588em;">g</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.664392em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">n</span></span></span></span></span></span></span></span><span class="mclose">)</span></span></span></span>。和归并排序一样，快速排序也使用分治的方法，将原始数组分为较小的数组。</p>
+<p><strong>算法描述：</strong></p>
+<ol>
+<li>从数组中选择中间一项作为“主元”（pivot）。</li>
+<li>创建两个指针，左边一个指向数组第一个项，右边一个指向数组最后一个项。移动左指<br>
+针直到我们找到一个比主元大的元素，接着，移动右指针直到找到一个比主元小的元素，然后交<br>
+换它们，重复这个过程，直到左指针超过了右指针。这个过程将使得比主元小的值都排在主元之<br>
+前，而比主元大的值都排在主元之后。这一步叫作划分操作（partition）。</li>
+<li>算法对划分后的小数组（较主元小的值组成的子数组，以及较主元大的值组成的<br>
+子数组）重复之前的两个步骤，直至数组已完全排序。</li>
+</ol>
+<figure data-type="image" tabindex="6"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1588422728358.gif" alt="" loading="lazy"></figure>
+<p><strong>代码实现：</strong></p>
+<pre><code class="language-js">function quickSort(array) {
+    // 传递待排序数组，以及索引0及其最末的位置（因为我们要排整个数组，而不是一个子数组）作为参数
+    return quick(array, 0, array.length - 1)
+}
+
+function quick(array, left, right) {
+    // 声明index变量，用于帮助我们将子数组分离为较小值数组和较大值数组
+    var index
+    if (array.length &gt; 1) {
+        index = partition(array, left, right)
+        // 划分为两个子数组重复快速排序过程
+        if (left &lt; index - 1) {
+            quick(array, left, index - 1)
+        }
+        if (index &lt; right) {
+            quick(array, index, right)
+        }
+    }
+    return array
+}
+
+function partition(array, left, right) {
+    // 选择中间项作为主元，初始化两个指针：数组第一个元素、数组最后一个元素
+    var pivot = array[Math.floor((left + right) / 2)],
+        l = left,
+        r = right;
+
+    // 只要left和right指针没有相互交错，就执行划分操作
+    while (l &lt;= r) {
+        // 移动left指针直到找到一个元素比主元大
+        while (array[l] &lt; pivot) {
+            l++
+        }
+        // 移动right指针直到找到一个元素比主元小
+        while (array[r] &gt; pivot) {
+            r--
+        }
+        // 当左指针指向的元素比主元大且右指针指向的元素比主元小，并且此时左指针索引没有右指针索引大，则交换它们，然后移动两个指针，并重复此过程继续循环。
+        if (l &lt;= r) {
+            var temp = array[l]
+            array[l] = array[r]
+            array[r] = temp;
+            l++
+            r--
+        }
+    }
+    // 在划分操作结束后，返回左指针的索引，用来处创建子数组
+    return l
+}
+
+quickSort([3, 44, 38, 5, 47, 15, 36, 26, 27, 2, 46, 4, 19, 50, 48])
+</code></pre>
+<h2 id="堆排序">堆排序</h2>
+<figure data-type="image" tabindex="7"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1588500046422.gif" alt="" loading="lazy"></figure>
+<p><strong>代码实现：</strong></p>
+<pre><code class="language-js">function heapSort(array) {
+    var heapSize = array.length
+    for (var i = Math.floor(heapSize / 2); i &gt;= 0; i--) {
+        heapify(array, heapSize, i)
+    }
+    while (heapSize &gt; 1) {
+        heapSize--
+        swap(array, 0, heapSize)
+        heapify(array, heapSize, 0)
+    }
+    return array
+}
+
+function heapify(array, heapSize, i) {
+    var left = i * 2 + 1,
+        right = i * 2 + 2,
+        largest = i;
+    if (left &lt; heapSize &amp;&amp; array[left] &gt; array[largest]) {
+        largest = left;
+    }
+    if (right &lt; heapSize &amp;&amp; array[right] &gt; array[largest]) {
+        largest = right;
+    }
+    if (largest !== i) {
+        swap(array, i, largest);
+        heapify(array, heapSize, largest);
+    }
+}
+
+function swap(arr, i, j) {
+    var temp = arr[i]
+    arr[i] = arr[j]
+    arr[j] = temp
+}
+
+heapSort([3, 44, 38, 5, 47, 15, 36, 26, 27, 2, 46, 4, 19, 50, 48])
+</code></pre>
+<!-- ## 计数排序    
+
+![](https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1588423003529.gif)
+
+## 桶排序
+
+## 基数排序
+
+![](https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1588423067487.gif) -->
+<h2 id="总结">总结</h2>
+<p>感慨算法实在是博大精深，前辈们花费心血研究出的成果值得我们学习和推敲。排序算法还有计数排序、桶排序和基数排序，实在没精力去一一研究了😓。</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[iOS 证书配置指北]]></title>
+        <id>https://jiangrubin.github.io/post/J9bJLbJi8/</id>
+        <link href="https://jiangrubin.github.io/post/J9bJLbJi8/">
+        </link>
+        <updated>2020-04-06T02:16:52.000Z</updated>
+        <content type="html"><![CDATA[<h2 id="前言">前言</h2>
+<p>用 react-native 开发项目时，在对 iOS 证书相关的配置，每次操作一遍后过一段时间又忘了。所以将证书的配置流程都记录下来，方便以后查阅。</p>
+<h2 id="创建应用程序-id">创建应用程序 ID</h2>
+<p>首先需要开发者账号，登录<a href="https://developer.apple.com/" target="_blank">苹果开发者网站</a>进入开发者账户。</p>
+<figure data-type="image" tabindex="1"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1586741039119.png" alt="" loading="lazy"></figure>
+<p>进入 <code>Certificates, Identifiers &amp; Profiles</code> 页面。</p>
+<figure data-type="image" tabindex="2"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1586141548388.png" alt="" loading="lazy"></figure>
+<p>选择 Identifiers 创建 App ID，填写 App ID 的 Description 和 Bundle ID。</p>
+<figure data-type="image" tabindex="3"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1586141828211.png" alt="" loading="lazy"></figure>
+<p>一般选择 App IDs 即可。</p>
+<figure data-type="image" tabindex="4"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1586141936519.png" alt="" loading="lazy"></figure>
+<figure data-type="image" tabindex="5"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1586142154922.png" alt="" loading="lazy"></figure>
+<p>为 App 添加一些功能，比如消息推送功能。</p>
+<figure data-type="image" tabindex="6"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1586142360020.png" alt="" loading="lazy"></figure>
+<figure data-type="image" tabindex="7"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1586142366600.png" alt="" loading="lazy"></figure>
+<p>填写好以上信息后，点击 Continue，确认 AppId 正确填写，点击 Register，注册 AppId 成功。</p>
+<h2 id="创建-csr-文件证书请求文件">创建 CSR 文件（证书请求文件）</h2>
+<blockquote>
+<p>CSR（Certificate Signing Request）即证书请求文件。证书申请者在申请数字证书时由 CSP（加密服务提供者）在生成私钥的同时也生成证书请求文件（CSR 文件），证书申请者只要把 CSR 文件提交给证书颁发机构后（创建 App ID 时上传到苹果后台），证书颁发机构使用其根证书私钥签名生成证书公钥文件（开发者证书）。</p>
+</blockquote>
+<p>CSR 文件在创建 Certificates 时需要上传。</p>
+<p>使用 Mac 自带的 <code>钥匙串访问</code> 来创建 <code>Certificate Signing Request</code> 文件，如下图操作：</p>
+<figure data-type="image" tabindex="8"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1586143369160.png" alt="" loading="lazy"></figure>
+<p>填写 <code>用户邮箱</code> 和 <code>常用名称</code> (名称可以随意填)，并选择 <code>存储到磁盘</code>，文件后缀为 <code>.certSigningRequest</code>。</p>
+<figure data-type="image" tabindex="9"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1586143624913.png" alt="" loading="lazy"></figure>
+<h2 id="创建证书">创建证书</h2>
+<blockquote>
+<p>iOS 证书是用来证明 iOS App 内容（executable code）的合法性和完整性的数字证书。对于想安装到真机或发布到 AppStore 的应用程序（App），只有经过签名验证（Signature Validated）才能确保来源可信，并且保证 App 内容是完整、未经篡改的。</p>
+</blockquote>
+<p>选择 Certificates 点击加号。</p>
+<figure data-type="image" tabindex="10"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1586144322541.png" alt="" loading="lazy"></figure>
+<p>选择相应的证书种类，如图有开发调试证书、生产发布证书（App Store 上传应用商店、Ad Hoc 用于测试包发布）、开发环境推送证书、生产环境推送证书。选择你需要的证书。</p>
+<figure data-type="image" tabindex="11"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1586236889292.png" alt="" loading="lazy"></figure>
+<figure data-type="image" tabindex="12"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1586236895832.png" alt="" loading="lazy"></figure>
+<p>再点击 Continue，选择之前生成的 CSR 文件上传，继续点击 Continue，证书创建完成。下载下来添加到钥匙串访问中。</p>
+<figure data-type="image" tabindex="13"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1586229786987.png" alt="" loading="lazy"></figure>
+<figure data-type="image" tabindex="14"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1586229914720.png" alt="" loading="lazy"></figure>
+<h3 id="推送证书和极光推送">推送证书和极光推送</h3>
+<p>项目中需要消息推送服务的话，就需要用的消息推送证书。我使用的是极光推送，把消息推送证书 Download 下来，双击添加到钥匙串访问中。找到刚才下载的证书并导出 <code>.p12</code> 文件，之后需要添加到极光后台。</p>
+<figure data-type="image" tabindex="15"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1586235903947.png" alt="" loading="lazy"></figure>
+<p>点击存储后需要输入密码，密码要记住，上传到极光后台需要用到。</p>
+<figure data-type="image" tabindex="16"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1586236061023.png" alt="" loading="lazy"></figure>
+<p>假设你的极光后台应用信息已经填写好，设置证书时如下图：</p>
+<figure data-type="image" tabindex="17"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1586236293643.png" alt="" loading="lazy"></figure>
+<p>上传之前导出的 <code>.p12</code> 文件，填写导出时设置的密码，极光会在后台为你的应用进行鉴权。</p>
+<figure data-type="image" tabindex="18"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1586236303663.png" alt="" loading="lazy"></figure>
+<h2 id="创建配置文件">创建配置文件</h2>
+<p>创建 Provisioning Profile 的前提，已在 Apple Developer 网站创建待发布应用所使用的 Bundle ID 的 App ID。</p>
+<p>选择 Profile 点击加号按钮，创建 Provisioning Profile。</p>
+<figure data-type="image" tabindex="19"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1586230645086.png" alt="" loading="lazy"></figure>
+<p>选择你需要的 Profile 环境。</p>
+<figure data-type="image" tabindex="20"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1586237441979.png" alt="" loading="lazy"></figure>
+<p>选择之前创建的 App ID、相应的证书、测试的设备、profile 名称，一直 Continue 即可。</p>
+<figure data-type="image" tabindex="21"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1586231384208.png" alt="" loading="lazy"></figure>
+<figure data-type="image" tabindex="22"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1586231669480.png" alt="" loading="lazy"></figure>
+<figure data-type="image" tabindex="23"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1586231591517.png" alt="" loading="lazy"></figure>
+<figure data-type="image" tabindex="24"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1586234979603.png" alt="" loading="lazy"></figure>
+<p>填写完 Profile Name 点击 generate 完成，之后点击 DownLoad，下载 <code>.mobileprovision</code> 的文件，双击文件即可添加到 Xcode。</p>
+<figure data-type="image" tabindex="25"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1586235137886.png" alt="" loading="lazy"></figure>
+<p>至此证书和配置文件之类的都创建完了。</p>
+<h2 id="其他问题">其他问题</h2>
+<h3 id="xcode-missing-private-key-解决方案">Xcode Missing Private key 解决方案</h3>
+<p>当我们换另一台 Mac 设备开发打包的时候，会发现提示 <code>Missing Private key</code>。</p>
+<p>因为苹果规定 <code>.cer</code> 证书只能存在于一台机器上，因此如果另一台电脑想要用的话，需要导出为 <code>.p12</code> 文件，安装到另一台没有安装 <code>.cer</code> 文件的 Mac 电脑。</p>
+<p>详细说明参考该篇博客 <a href="https://www.jianshu.com/p/6372055fbaa0" target="_blank">https://www.jianshu.com/p/6372055fbaa0</a></p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Vue 源码分析 — 响应式原理]]></title>
+        <id>https://jiangrubin.github.io/post/d1Q56KAHb/</id>
+        <link href="https://jiangrubin.github.io/post/d1Q56KAHb/">
+        </link>
+        <updated>2020-03-15T11:50:48.000Z</updated>
+        <content type="html"><![CDATA[<h2 id="前言">前言</h2>
+<p>Vue 是目前流行前端框架，其独特的特性是其非侵入性的响应式系统。当侦测到数据的变化来更新视图，原理核心是使用 <code>Object.defineProperty</code> 方法。本文对响应式原理进行分析，参照 vue 源码实现简易版的数据响应式。</p>
+<figure data-type="image" tabindex="1"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/1584274877854.png" alt="" loading="lazy"></figure>
+<h2 id="代码实现">代码实现</h2>
+<p>本文完整代码点击<a href="https://github.com/jiangrubin/vue-mine" target="_blank">这里</a></p>
+<pre><code class="language-js">import { def, isObject } from '../util/index'
+
+class Observer {
+  constructor (value) {
+    this.value = value
+    // 通过 defineProperty 为对象添加 __ob__ 属性，并且配置为不可枚举
+    // 这样做的意义是对象遍历时不会遍历到 __ob__ 属性
+    def(value, '__ob__', this)
+    this.walk(value)
+  }
+
+  walk (obj) {
+    const keys = Object.keys(obj)
+    for (let i = 0; i &lt; keys.length; i++) {
+      defineReactive(obj, keys[i], obj[keys[i]])
+    }
+  }
+}
+
+function defineReactive (obj, key, val) {
+  // 如果 val 是对象的话递归监听
+  observe(val)
+  Object.defineProperty(obj, key, {
+    enumerable: true, // 可枚举
+    configurable: true, // 可配置
+    get: function reactiveGetter () {
+      return val
+    },
+    set: function reactiveSetter (newVal) {
+      if (newVal === val || (newVal !== newVal &amp;&amp; val !== val)) {
+        return
+      }
+      val = newVal
+      // 如果赋值是对象的话也要递归监听
+      observe(newVal)
+      console.log('侦测到数据变化', newVal);
+    }
+  })
+}
+
+export function observe (value) {
+  // 类型判断，不是对象类型直接返回
+  if (!isObject(value)) {
+    return
+  }
+  let ob = new Observer(value)
+  return ob
+}
+</code></pre>
+<p>上面这段代码主要作用在于：<code>observe</code> 函数传入一个 <code>value</code> (需要被追踪变化的对象)，作为 <code>Observer</code> 类的参数实例化，遍历所有属性对该对象的每一个属性都通过 <code>defineReactive</code> 处理， 在 <code>defineReactive</code> 方法内 <code>observe</code> 会进行递归调用，以此来达到实现侦测对象变化。</p>
+<p>接下来实现 <code>Vue</code> 类，对 options 中的 data 传入 observe 开发进行初始化数据侦测。</p>
+<pre><code class="language-js">import { observe } from '../observer/index'
+
+const sharedPropertyDefinition = {
+  enumerable: true,
+  configurable: true,
+  get: function () {},
+  set: function () {}
+}
+
+function proxy (target, sourceKey, key) {
+  sharedPropertyDefinition.get = function proxyGetter () {
+    return this[sourceKey][key]
+  }
+  sharedPropertyDefinition.set = function proxySetter (val) {
+    this[sourceKey][key] = val
+  }
+  Object.defineProperty(target, key, sharedPropertyDefinition)
+}
+
+function Vue (options) {
+  let vm = this
+  let data = options.data
+  vm._data = data
+
+  const keys = Object.keys(data)
+  let i = keys.length
+  while (i--) {
+    const key = keys[i]
+    // 可以让 vm._data.x 通过 vm.x 访问
+    proxy(vm, `_data`, key)
+  }
+
+  observe(data)
+}
+
+export default Vue
+</code></pre>
+<p>实例化 Vue 类，查看控制台的输出 vm。</p>
+<pre><code class="language-js">import Vue from './instance/index'
+
+const vm = new Vue({
+  data: {
+    message: 'hello',
+    location: { x: 100, y: 100 },
+    arr: [1]
+  }
+})
+
+window.vm = vm
+
+// 在控制台输入： vm.location = { x: 10, y: 10 } 
+// 输出：侦测到数据变化 {__ob__: Observer}
+// 输入：vm.location.z = 10
+// 输出：10
+// 输入：vm.arr.push(2)
+// 输出：2
+</code></pre>
+<p>从中可以看到几个问题：</p>
+<ul>
+<li>无法检测到对象属性的添加或删除</li>
+</ul>
+<p>通过 <code>Object.defineProperty</code> 来将对象的key转换成 <code>getter/setter</code> 的形式来追踪变化，但 <code>getter/setter</code> 只能追踪一个数据是否被修改，无法追踪新增属性和删除属性。</p>
+<p>实现 Vue 提供的 <code>set</code> 和 <code>delete</code> 方法向嵌套对象添加/删除响应式属性。</p>
+<ul>
+<li>不能监听数组的变化，需要进行数组方法的重写</li>
+</ul>
+<p>解决以上问题，具体代码如下：</p>
+<pre><code class="language-js">// array.js
+// 获得数组原型
+const arrayProto = Array.prototype
+export const arrayMethods = Object.create(arrayProto)
+// 创建一个自己的原型 并且重写 methods 这些方法
+const methodsToPatch = [
+  'push',
+  'pop',
+  'shift',
+  'unshift',
+  'splice',
+  'sort',
+  'reverse'
+]
+
+methodsToPatch.forEach(function (method) {
+  const original = arrayProto[method]
+  arrayMethods[method] = function (...args) {
+    const result = original.apply(this, args)
+    return result
+  }
+})
+</code></pre>
+<p>在 <code>observer/index.js</code> 中导入 <code>arrayMethods</code> 重写的原型对象。</p>
+<pre><code class="language-js">import { arrayMethods } from './array'
+import { def, isObject } from '../util/index'
+
+class Observer {
+  constructor (value) {
+    this.value = value
+    def(value, '__ob__', this)
+    if (Array.isArray(value)) {
+      value.__proto__ = arrayMethods
+      this.observeArray(value)
+    } else {
+      this.walk(value)
+    }
+  }
+
+  walk (obj) {
+    const keys = Object.keys(obj)
+    for (let i = 0; i &lt; keys.length; i++) {
+      defineReactive(obj, keys[i], obj[keys[i]])
+    }
+  }
+
+  observeArray (items) {
+    for (let i = 0, l = items.length; i &lt; l; i++) {
+      observe(items[i])
+    }
+  }
+}
+</code></pre>
+<p>以上代码实现了数据劫持，接下来需要实现收集依赖以及数据更新时派发更新，其中的核心思想就是<code>发布-订阅模式</code>。关于订阅者 <code>Dep</code> 和观察者 <code>Watcher</code> 相关代码。</p>
+<p><strong>订阅者 Dep</strong></p>
+<pre><code class="language-js">import { remove } from '../util/index'
+
+export default class Dep {
+  constructor () {
+    /* 用来存放 Watcher 对象的数组 */
+    this.subs = []
+  }
+
+  /* 在 subs 中添加一个 Watcher 对象 */
+  addSub (sub) {
+    this.subs.push(sub)
+  }
+
+  removeSub (sub) {
+    remove(this.subs, sub)
+  }
+  
+  depend () {
+    if (Dep.target) {
+      Dep.target.addDep(this)
+    }
+  }
+
+  /* 通知所有 Watcher 对象更新视图 */
+  notify () {
+    const subs = this.subs.slice()
+    for (let i = 0, l = subs.length; i &lt; l; i++) {
+      subs[i].update()
+    }
+  }
+}
+
+/* 在 watcher.js 中调用，将 Watcher 实例赋值给 Dep.target */ 
+Dep.target = null
+</code></pre>
+<p><strong>观察者 Watcher</strong></p>
+<pre><code class="language-js">import Dep from './dep'
+
+export default class Watcher {
+  constructor (vm, expOrFn, cb) {
+    this.vm = vm
+    this.getter = expOrFn || function () {}
+    this.cb = cb
+    this.value = this.get()
+  }
+
+  get () {
+    Dep.target = this
+
+    const vm = this.vm
+    let value = this.getter.call(vm, vm)
+    return value
+  }
+
+  addDep(dep) {
+    dep.addSub(this)
+  }
+
+  update () {
+    console.log('更新value:', this.value)
+  }
+}
+</code></pre>
+<p>在执行构造函数的时候将 <code>Dep.target</code> 指向自身，从而使得收集到了对应的 <code>Watcher</code>，在派发更新的时候取出对应的 <code>Watcher</code>，然后执行 <code>update</code> 函数。</p>
+<p>最后对 <code>defineReactive</code> 函数和 <code>Vue</code> 类进行改造</p>
+<pre><code class="language-js">export function defineReactive (obj, key, val) {
+  const dep = new Dep()
+  let childOb = observe(val)
+  
+  Object.defineProperty(obj, key, {
+    enumerable: true,
+    configurable: true,
+    get: function reactiveGetter () {
+      // 将 Watcher 添加到订阅  
+      dep.depend()
+      return val
+    },
+    set: function reactiveSetter (newVal) {
+      if (newVal === val || (newVal !== newVal &amp;&amp; val !== val)) {
+        return
+      }
+      val = newVal
+      childOb = observe(newVal)
+      // 执行 watcher 的 update 方法
+      dep.notify()
+    }
+  })
+}
+</code></pre>
+<pre><code class="language-js">function Vue (options) {
+  let vm = this
+  let data = options.data
+  vm._data = data
+
+  const keys = Object.keys(data)
+  let i = keys.length
+  while (i--) {
+    const key = keys[i]
+    proxy(vm, `_data`, key)
+  }
+
+  observe(data)
+  /* 新建一个 Watcher 观察者对象，这时候 Dep.target 会指向这个 Watcher 对象 */
+  new Watcher(data, val =&gt; val)
+}
+</code></pre>
+<p>当 render function 被渲染的时候，读取所需对象的值，会触发 reactiveGetter 函数把当前的 Watcher 对象（存放在 Dep.target 中）收集到 Dep 类中去。之后如果修改对象的值，则会触发 reactiveSetter 方法，通知 Dep 类调用 notify 来触发所有 Watcher 对象的 update 方法更新对应视图。</p>
+<h2 id="总结">总结</h2>
+<p>本文在阅读 Vue 源码后，根据自己的理解加上参考其他文章，编写的一个精简代码实现。其中代码实现并不严谨以及自身的理解不到位，在此深表惭愧。</p>
+]]></content>
+    </entry>
+</feed>

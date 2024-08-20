@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>微信小程序开发笔记 - Rubin&#39;s Blog</title>
+<meta name="description" content="温故而知新" />
+<link rel="shortcut icon" href="https://jiangrubin.github.io/favicon.ico?v=1724155050236">
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/katex@0.10.0/dist/katex.min.css">
+<link href="https://fastly.jsdelivr.net/npm/remixicon@1.3.1/fonts/remixicon.css" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/animate.css@3.7.2/animate.min.css">
+
+<link rel="stylesheet" href="https://jiangrubin.github.io/styles/main.css">
+<link rel="alternate" type="application/atom+xml" title="微信小程序开发笔记 - Rubin&#39;s Blog - Atom Feed" href="https://jiangrubin.github.io/atom.xml">
+
+
+
+<script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?bd0efd81b021481d2fc486675082f721";
+    var s = document.getElementsByTagName("script")[0]; 
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+  </head>
+  <body>
+    <div id="app" class="main px-4 flex flex-col lg:flex-row">
+      <div id="sidebar" class="sidebar-wrapper lg:static lg:w-1/4">
+  <div class="lg:sticky top-0">
+    <div class="sidebar-content">
+      <div class="flex lg:block p-4 lg:px-0 items-center fixed lg:static lg:block top-0 right-0 left-0 bg-white z-50">
+        <i class="remixicon-menu-2-line lg:mt-4 text-2xl cursor-pointer animated fadeIn" onclick="openMenu()"></i>
+        <a href="https://jiangrubin.github.io">
+          <img class="animated fadeInLeft avatar rounded-lg mx-4 lg:mt-32 lg:mx-0 mt-0 lg:w-24 lg:h-24 w-12 w-12" src="https://jiangrubin.github.io/images/avatar.png?v=1724155050236" alt="">
+        </a>
+        <h1 class="animated fadeInLeft lg:text-4xl font-semibold lg:mt-8 mt-0 text-xl" style="animation-delay: 0.2s">Rubin&#39;s Blog</h1>
+      </div>
+      
+        <div class="animated fadeInLeft" style="animation-delay: 0.4s">
+          <p class="my-4 text-gray-600 font-light hidden lg:block">
+            文章目录
+          </p>
+          <div class="toc-container hidden lg:block">
+            <ul class="markdownIt-TOC">
+<li>
+<ul>
+<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
+<li><a href="#%E5%AD%97%E4%BD%93">字体</a>
+<ul>
+<li><a href="#%E5%85%A8%E5%B1%80%E5%AD%97%E4%BD%93">全局字体</a></li>
+<li><a href="#%E5%AD%97%E5%8F%B7%E5%8D%95%E4%BD%8D">字号单位</a></li>
+</ul>
+</li>
+<li><a href="#%E5%9B%BE%E7%89%87%E8%B5%84%E6%BA%90">图片资源</a></li>
+<li><a href="#wxs-%E5%B7%A5%E5%85%B7%E6%96%B9%E6%B3%95">WXS 工具方法</a></li>
+<li><a href="#iphonex-%E9%80%82%E9%85%8D">iPhoneX 适配</a></li>
+<li><a href="#ios-%E4%B8%AD-promise-%E5%AF%B9%E8%B1%A1%E4%B8%8D%E5%AD%98%E5%9C%A8-finally-%E6%96%B9%E6%B3%95">iOS 中 Promise 对象不存在 finally 方法</a></li>
+<li><a href="#%E5%BC%95%E5%85%A5%E8%B7%AF%E5%BE%84">引入路径</a></li>
+<li><a href="#sku-%E5%95%86%E5%93%81%E8%A7%84%E6%A0%BC">SKU 商品规格</a>
+<ul>
+<li><a href="#%E7%AC%9B%E5%8D%A1%E5%B0%94%E7%A7%AF%E5%BA%94%E7%94%A8">笛卡尔积应用</a></li>
+</ul>
+</li>
+<li><a href="#%E6%80%BB%E7%BB%93">总结</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+<div class="menu-container">
+  <i class="remixicon-arrow-left-line text-2xl cursor-pointer animated fadeIn close-menu-btn" onclick="closeMenu()"></i>
+  <div>
+    
+      
+        <a href="/" class="menu" style="animation-delay: 0s">
+          首页
+        </a>
+      
+    
+      
+        <a href="/archives" class="menu" style="animation-delay: 0.2s">
+          归档
+        </a>
+      
+    
+      
+        <a href="/tags" class="menu" style="animation-delay: 0.4s">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu" style="animation-delay: 0.6000000000000001s">
+          关于
+        </a>
+      
+    
+  </div>
+  <div class="site-footer">
+    <div class="py-4 text-gray-700">Powered by <a href="https://github.com/getgridea/gridea" target="_blank" rel="noopener noreferrer">Gridea</a></div>
+    <a class="rss" href="https://jiangrubin.github.io/atom.xml" target="_blank" rel="noopener noreferrer">RSS</a>
+  </div>
+</div>
+<div class="mask" onclick="closeMenu()">
+</div>
+      <div class="content-wrapper py-32 lg:p-8 lg:w-3/4 post-detail animated fadeIn">
+        <h1 class="text-3xl font-semibold lg:mt-16">微信小程序开发笔记</h1>
+        <div class="text-sm text-gray-700 lg:my-8">
+          2020-09-27 / 5 min read
+        </div>
+        
+          <img class="post-feature-image rounded-lg mx-auto my-4" src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/wei-xin-xiao-cheng-xu-kai-fa-bi-ji.jpg" alt="">
+        
+        <div class="post-content yue">
+          <h2 id="前言">前言</h2>
+<p>最近在开发小程序项目，将项目中遇到的问题和要点记录下来，方便以后查阅。</p>
+<h2 id="字体">字体</h2>
+<h3 id="全局字体">全局字体</h3>
+<p>项目中使用了 <a href="https://vant-contrib.gitee.io/vant-weapp/#/intro">vant-weapp</a>，有赞开源的小程序组件库。</p>
+<p>为保证在不同设备上提供最佳的视觉体验，且与组件库风格统一，可在 app.wxss 中设置以下全局字体。</p>
+<pre><code class="language-css">page {
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica,
+    Segoe UI, Arial, Roboto, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft Yahei',
+    sans-serif;
+}
+</code></pre>
+<h3 id="字号单位">字号单位</h3>
+<p>字号单位用 px，不同分辨率设备上字体大小保持一致，取值尽量是偶数。</p>
+<p>可以将常用的字号写成 css 变量，方便使用。</p>
+<pre><code class="language-css">page {
+    --font-size-xs: 10px;
+    --font-size-sm: 12px;
+    --font-size-md: 14px;
+    --font-size-lg: 16px;
+    --font-size-xl: 18px;
+    --font-size-xxl: 24px;
+}
+
+view {
+    font-size: var(--font-size-md);
+}
+</code></pre>
+<h2 id="图片资源">图片资源</h2>
+<p>项目中经常会使用图片、SVG 等文件，而这些文件占据项目体积很大的比重。因小程序包体积限制，需要对图片文件进行压缩处理。</p>
+<ul>
+<li>
+<p><a href="https://tinypng.com/">TinyPNG 图片压缩</a></p>
+</li>
+<li>
+<p><a href="https://www.zhangxinxu.com/sp/svgo/">SVG 在线压缩合并工具</a></p>
+</li>
+</ul>
+<h2 id="wxs-工具方法">WXS 工具方法</h2>
+<p><a href="https://developers.weixin.qq.com/miniprogram/dev/reference/wxs/">WXS</a> 是小程序的一套脚本语言。语法跟 JavaScript 类似，但其中有一些坑。比如不能遍历对象。没有 Object 对象，不能使用 <code>for ... in ...</code>。小程序社区里也有关于这个的<a href="https://developers.weixin.qq.com/community/develop/doc/000680569f81100755279069856000?highLine=wxs%2520%25E9%2581%258D%25E5%258E%2586%25E5%25AF%25B9%25E8%25B1%25A1">吐槽</a>。</p>
+<p>只能通过正则的方式来实现对象的遍历方法：</p>
+<pre><code class="language-js">// object.wxs
+var REGEXP = getRegExp('{|}|&quot;', 'g');
+
+function keys (obj) {
+  return JSON.stringify(obj)
+    .replace(REGEXP, '')
+    .split(',')
+    .map(function(item) {
+      return item.split(':')[0]
+    })
+}
+
+function values (obj) {
+  return JSON.stringify(obj)
+    .replace(REGEXP, '')
+    .split(',')
+    .map(function(item) {
+      return item.split(':')[1]
+    })
+}
+
+module.exports = {
+  keys: keys,
+  values: values,
+}
+</code></pre>
+<h2 id="iphonex-适配">iPhoneX 适配</h2>
+<p>屏幕上边框，右边框，下边框，左边框安全距离：</p>
+<pre><code>safe-area-inset-top
+safe-area-inset-right
+safe-area-inset-bottom
+safe-area-inset-left
+</code></pre>
+<p>使用：</p>
+<p>iOS 11</p>
+<pre><code class="language-css">padding-top: constant(safe-area-inset-top);
+padding-right: constant(safe-area-inset-right);
+padding-bottom: constant(safe-area-inset-bottom);
+padding-left: constant(safe-area-inset-left);
+</code></pre>
+<p>iOS 11.2 beta 及其后</p>
+<pre><code class="language-css">padding-top: env(safe-area-inset-top);
+padding-right: env(safe-area-inset-right);
+padding-bottom: env(safe-area-inset-bottom);
+padding-left: env(safe-area-inset-left);
+</code></pre>
+<p>兼容性写法：</p>
+<pre><code class="language-css">padding-top: constant(safe-area-inset-top);
+padding-top: env(safe-area-inset-top);
+</code></pre>
+<p>参考文档：<a href="https://webkit.org/blog/7929/designing-websites-for-iphone-x/?hmsr=funteas.com&amp;utm_medium=funteas.com&amp;utm_source=funteas.com">苹果官方文档</a></p>
+<h2 id="ios-中-promise-对象不存在-finally-方法">iOS 中 Promise 对象不存在 finally 方法</h2>
+<p>在开发者工具中没有这个问题，只在 iOS 真机中存在。不知小程序官方是否修复了此 bug。</p>
+<p>在 app.js 中添加如下代码：</p>
+<pre><code class="language-js">if (!Promise.prototype.finally) {
+  Promise.prototype.finally = function (callback) {
+    this.then(res =&gt; {
+      callback &amp;&amp; callback(res)
+    }, error =&gt; {
+      callback &amp;&amp; callback(error)
+    })
+  }
+}
+</code></pre>
+<h2 id="引入路径">引入路径</h2>
+<p>在小程序中 <code>import ... from ...</code> 和 <code>require</code> 不支持绝对路径。只能使用相对路径引入，如果目录过深就会写成 <code>../../../../util.js</code>，不够直观优雅。</p>
+<p>可以通过以下方式优化引入：</p>
+<pre><code class="language-js">// app.js 中
+App({
+    require (path) {
+        return require(`${path}`)
+    }
+})
+</code></pre>
+<p>在其他 page 和组件中，就可以统一相对于根路径引入。</p>
+<pre><code class="language-js">const app = getApp()
+const { formatTime } = app.require('/utils/util')
+</code></pre>
+<h2 id="sku-商品规格">SKU 商品规格</h2>
+<blockquote>
+<p>SKU 是指物理上不可分割的最小存货单元</p>
+</blockquote>
+<p>开发的是电商类型项目，SKU 商品规格选择功能是必不可少的，也是项目中比较复杂的功能。将功能封装为组件，具体的代码查看该<a href="https://github.com/jiangrubin/weapp-sku">地址</a>。</p>
+<figure data-type="image" tabindex="1"><img src="https://fastly.jsdelivr.net/gh/jiangrubin/image-host/406936562400.png" alt="" loading="lazy"></figure>
+<h3 id="笛卡尔积应用">笛卡尔积应用</h3>
+<p>SKU 商品规格选择是 C 端的功能，其中还涉及到如何生成商品 SKU 数据。也就是笛卡尔积的应用。</p>
+<p>如上图所示，通过“颜色”和“尺寸”2个销售属性来生成商品的 SKU，就需要对属性的值做笛卡尔积，其中核心代码如下：</p>
+<pre><code class="language-js">/**
+ * @desc 多数组求笛卡尔积
+ * @param { Array } array [['粉色', '黄色', '蓝色'], ['大', '小']]
+ * @return { Array } ['粉色', '大'], ['粉色', '小'], ['黄色', '大'], ['黄色', '小'], ['蓝色', '大'], ['蓝色', '小']
+ */
+function cartesianProduct (array) {
+  return array.reduce(function (a, b) {
+    return a.map(function (x) {
+      return b.map(function (y) {
+        return x.concat(y)
+      })
+    }).reduce(function (a, b) { return a.concat(b) }, [])
+  }, [[]])
+}
+</code></pre>
+<h2 id="总结">总结</h2>
+<p>这些都是最近项目中记录下来的，欢迎大家交流，以后开发中碰到了其他问题也会持续更新的。</p>
+
+        </div>
+
+        
+          <a class="animated fadeInUp p-2 items-center text-sm text-gray-700 border hover:bg-gray-300 leading-none rounded-full flex lg:inline-flex m-4 " href="https://jiangrubin.github.io/tag/iazsLuWUk/">
+            <span class="flex-auto">微信小程序</span>
+          </a>
+        
+          <a class="animated fadeInUp p-2 items-center text-sm text-gray-700 border hover:bg-gray-300 leading-none rounded-full flex lg:inline-flex m-4 " href="https://jiangrubin.github.io/tag/pGvoCX5tk/">
+            <span class="flex-auto">js</span>
+          </a>
+        
+
+
+        <div class="flex justify-between py-8">
+          
+            <div class="prev-post">
+              <a href="https://jiangrubin.github.io/post/hP91A8M2P/">
+                <h3 class="post-title">
+                  <i class="remixicon-arrow-left-line"></i>
+                  编写一个 markdown-loader
+                </h3>
+              </a>
+            </div>
+          
+
+          
+            <div class="next-post">
+              <a href="https://jiangrubin.github.io/post/MPPwT3CbK/">
+                <h3 class="post-title">
+                  数据结构与算法 — 递归
+                  <i class="remixicon-arrow-right-line"></i>
+                </h3>
+              </a>
+            </div>
+          
+        </div>
+
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '58415ac62e821b4b6bbd',
+    clientSecret: '69a93aa48149a7a74c6517efbbb32c57bc07799f',
+    repo: 'jiangrubin.github.io',
+    owner: 'jiangrubin',
+    admin: ['jiangrubin'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+
+          
+        
+
+      </div>
+    </div>
+
+    <script src="https://fastly.jsdelivr.net/npm/prismjs/prism.min.js"></script>
+<script>
+
+Prism.highlightAll()
+
+let mainNavLinks = document.querySelectorAll(".markdownIt-TOC a");
+
+// This should probably be throttled.
+// Especially because it triggers during smooth scrolling.
+// https://lodash.com/docs/4.17.10#throttle
+// You could do like...
+// window.addEventListener("scroll", () => {
+//    _.throttle(doThatStuff, 100);
+// });
+// Only not doing it here to keep this Pen dependency-free.
+
+window.addEventListener("scroll", event => {
+  let fromTop = window.scrollY;
+
+  mainNavLinks.forEach((link, index) => {
+    let section = document.getElementById(decodeURI(link.hash).substring(1));
+    let nextSection = null
+    if (mainNavLinks[index + 1]) {
+      nextSection = document.getElementById(decodeURI(mainNavLinks[index + 1].hash).substring(1));
+    }
+    if (section.offsetTop <= fromTop) {
+      if (nextSection) {
+        if (nextSection.offsetTop > fromTop) {
+          link.classList.add("current");
+        } else {
+          link.classList.remove("current");    
+        }
+      } else {
+        link.classList.add("current");
+      }
+    } else {
+      link.classList.remove("current");
+    }
+  });
+});
+
+
+document.addEventListener("DOMContentLoaded", function() {
+  var lazyImages = [].slice.call(document.querySelectorAll(".post-feature-image.lazy"));
+
+  if ("IntersectionObserver" in window) {
+    let lazyImageObserver = new IntersectionObserver(function(entries, observer) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          let lazyImage = entry.target
+          lazyImage.style.backgroundImage = `url(${lazyImage.dataset.bg})`
+          lazyImage.classList.remove("lazy")
+          lazyImageObserver.unobserve(lazyImage)
+        }
+      });
+    });
+
+    lazyImages.forEach(function(lazyImage) {
+      lazyImageObserver.observe(lazyImage)
+    })
+  } else {
+    // Possibly fall back to a more compatible method here
+  }
+});
+
+const menuContainer = document.querySelector('.menu-container')
+const menus = document.querySelectorAll('.menu-container .menu')
+const mask = document.querySelector('.mask')
+const contentWrapper = document.querySelector('.content-wrapper')
+const latestArticle = document.querySelector('.latest-article')
+const readMore = document.querySelector('.read-more')
+const indexPage = document.querySelector('.index-page')
+
+const isHome = location.pathname === '/'
+if (latestArticle) {
+  latestArticle.style.display = isHome ? 'block' : 'none'
+  readMore.style.display = isHome ? 'block' : 'none'
+  indexPage.style.display = isHome ? 'none' : 'block'
+}
+
+const openMenu = () => {
+  menuContainer.classList.add('open')
+  menus.forEach(menu => {
+    menu.classList.add('animated', 'fadeInLeft')
+  })
+  mask.classList.add('open')
+  contentWrapper.classList.add('is-second')
+}
+
+const closeMenu = () => {
+  menuContainer.classList.remove('open')
+  menus.forEach(menu => {
+    menu.classList.remove('animated', 'fadeInLeft')
+  })
+  mask.classList.remove('open')
+  contentWrapper.classList.remove('is-second')
+}
+</script>
+  
+  </body>
+</html>
